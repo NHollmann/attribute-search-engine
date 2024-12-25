@@ -1,0 +1,13 @@
+[package]
+name = "attribute-search-engine"
+version = "0.1.0"
+authors = ["Nicolas Hollmann"]
+edition = "2021"
+description = "Generic search engine for rows with attributes using different matchers."
+readme = "README.md"
+repository = "https://github.com/NHollmann/attribute-search-engine"
+license = "MIT"
+keywords = ["search-engine", "attributes"]
+publish = ["crates-io"]
+
+[dependencies]
