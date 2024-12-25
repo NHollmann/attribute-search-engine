@@ -1,5 +1,11 @@
-# attribute-search-engine
-Generic search engine for rows with attributes using different matchers.
+# Attribute Search Engine
+
+[<img alt="github" src="https://img.shields.io/badge/github-NHollmann/attribute--search--engine-77b0fc?style=for-the-badge&labelColor=555555&logo=github" height="20">](https://github.com/NHollmann/attribute-search-engine)
+[<img alt="crates.io" src="https://img.shields.io/crates/v/attribute-search-engine.svg?style=for-the-badge&color=fc8d62&logo=rust" height="20">](https://crates.io/crates/attribute-search-engine)
+[<img alt="docs.rs" src="https://img.shields.io/badge/docs.rs-attribute--search--engine-66c2a5?style=for-the-badge&labelColor=555555&logo=docs.rs" height="20">](https://docs.rs/attribute-search-engine)
+
+
+Attribute Search Engine is a generic search engine for rows consisting of attributes, that can be searched using different matchers.
 
 - Rows
   - Attributes

@@ -6,6 +6,7 @@ edition = "2021"
 description = "Generic search engine for rows with attributes using different matchers."
 readme = "README.md"
 repository = "https://github.com/NHollmann/attribute-search-engine"
+documentation = "https://docs.rs/attribute-search-engine"
 license = "MIT"
 keywords = ["search-engine", "attributes"]
 publish = ["crates-io"]
