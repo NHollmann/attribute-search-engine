@@ -14,8 +14,8 @@ Attribute Search Engine is a generic search engine for rows consisting of attrib
     - RangeMatch  (BTreeMap)
 - Queries
   - Are in CNF (Conjunctive Normal Form)
-    Example: +name:Hans,Peter +age:25-35 -lastname=Doe
-    Means:   (name=Hans || name==Peter) && (age >= 25 && age <= 35) && !(lastname=Doe)
+    Example: `+name:Hans,Peter +age:25-35 -lastname=Doe`
+    Means:   `(name=Hans || name==Peter) && (age >= 25 && age <= 35) && !(lastname=Doe)`
   - 1. get a set for each predicate
     2. get the union of these sets for each disjunction
     3. get the intersections of the resulting sets for each conjunction
