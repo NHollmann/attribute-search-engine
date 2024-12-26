@@ -7,6 +7,8 @@
 
 Attribute Search Engine is a generic search engine for rows consisting of attributes, that can be searched using different matchers.
 
+**Warning: This project is not finished yet and the public interface may change.**
+
 - Rows
   - Attributes
     - ExactMatch  (HashMap)
