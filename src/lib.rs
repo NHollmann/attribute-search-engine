@@ -1,4 +1,4 @@
-use std::collections::HashMap;
+use std::{collections::{HashMap, HashSet}, hash::Hash};
 
 // AttributeType sets the type of an attribute in an AttributeSchema
 #[derive(Debug, Clone, Copy, PartialEq)]
@@ -23,7 +23,7 @@ pub enum AttributeType {
 /// schema.register_attribute("zipcode", attribute_search_engine::AttributeType::ExactMatch);
 /// schema.register_attribute("age", attribute_search_engine::AttributeType::RangeMatch);
 /// ```
-#[derive(Clone)]
+#[derive(Debug, Clone)]
 pub struct AttributeSchema {
     attributes: Vec<(String, AttributeType)>,
 }
@@ -42,12 +42,24 @@ impl AttributeSchema {
     }
 }
 
-struct SearchIndexExact<T> {
-    index: HashMap<String, T>,
+#[derive(Debug)]
+struct SearchIndexExact<P: Eq + Hash, T: Eq + Hash> {
+    index: HashMap<T, HashSet<P>>,
 }
 
+impl<P: Eq + Hash, T: Eq + Hash> SearchIndexExact<P, T> {
+    fn insert(&mut self, primary_id: P, attribute_value: T) {
+        self.index.entry(attribute_value).or_default().insert(primary_id);
+    }
+
+    fn search(&self, attribute_value: T) -> Option<&HashSet<P>> {
+        self.index.get(&attribute_value)
+    }
+}
+
+#[derive(Debug)]
 pub struct SearchEngine {
-    indices: HashMap<String, SearchIndexExact<String>>,
+    indices: HashMap<String, SearchIndexExact<usize, String>>,
 }
 
 impl SearchEngine {
@@ -65,10 +77,18 @@ impl SearchEngine {
             indices,
         }
     }
-}
 
-pub fn add(left: u64, right: u64) -> u64 {
-    left + right
+    pub fn insert(&mut self, primary_id: usize, attribute: &str, attribute_value: &str) {
+        match self.indices.get_mut(attribute) {
+            Some(index) => index.insert(primary_id, attribute_value.to_string()),
+            _ => {}
+        }
+    }
+
+    pub fn search_attribute(&self, attribute: &str, attribute_value: String) -> Option<&HashSet<usize>> {
+        let index = self.indices.get(attribute)?;
+        index.search(attribute_value)
+    }
 }
 
 #[cfg(test)]
@@ -77,7 +97,19 @@ mod tests {
 
     #[test]
     fn it_works() {
-        let result = add(2, 2);
-        assert_eq!(result, 4);
+        let mut schema = AttributeSchema::new();
+        schema.register_attribute("name", AttributeType::ExactMatch);
+        schema.register_attribute("zipcode", AttributeType::ExactMatch);
+        let mut engine = SearchEngine::new(&schema);
+        engine.insert(0, "name", "Alice");
+        engine.insert(0, "zipcode", "12345");
+        engine.insert(1, "name", "Bob");
+        engine.insert(1, "zipcode", "12345");
+        engine.insert(2, "name", "Eve");
+        engine.insert(2, "zipcode", "12345");
+        engine.insert(2, "zipcode", "54321");
+
+        let result = engine.search_attribute("zipcode", "12345".to_owned()).expect("search attribute result to not be empty");
+        assert_eq!(result.len(), 3);
     }
 }

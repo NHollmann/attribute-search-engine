@@ -1,9 +1,42 @@
-use std::hint::black_box;
-use criterion::{criterion_group, criterion_main, Criterion};
-use attribute_search_engine::add;
+use std::{hint::black_box, time::Duration};
+use criterion::{criterion_group, criterion_main, BenchmarkId, Criterion, PlotConfiguration};
+use attribute_search_engine::{AttributeSchema, AttributeType, SearchEngine};
+
+fn create_engine(n: usize) {
+    let mut schema = AttributeSchema::new();
+        schema.register_attribute("a", AttributeType::ExactMatch);
+        schema.register_attribute("b", AttributeType::ExactMatch);
+        schema.register_attribute("c", AttributeType::ExactMatch);
+        schema.register_attribute("d", AttributeType::ExactMatch);
+
+        let mut engine = SearchEngine::new(&schema);
+        for i in 0..n {
+            engine.insert(i, "a", &format!("{}", i % 10));
+            if i % 2 == 0 {
+                engine.insert(i, "b", &format!("{}", i % 3));
+            }
+            if i % 5 == 0 {
+                engine.insert(i, "c", &format!("{}", i % 25));
+            }
+            if i % 5 == 2 {
+                engine.insert(i, "b", &format!("{}", i % 13));
+            }
+            if i % 7 == 0 {
+                engine.insert(i, "d", &format!("{}", i % 5));
+            }
+        }
+}
 
 fn criterion_benchmark(c: &mut Criterion) {
-    c.bench_function("add", |b| b.iter(|| add(black_box(20), black_box(30))));
+    let mut create_group = c.benchmark_group("create engine");
+    create_group.sample_size(150).measurement_time(Duration::from_secs(15));
+    create_group.plot_config(PlotConfiguration::default().summary_scale(criterion::AxisScale::Logarithmic));
+    for size in [1, 10, 100, 1000, 10000, 100000].iter() {
+        create_group.bench_with_input(BenchmarkId::from_parameter(size), size, |b, &size| {
+            b.iter(|| create_engine(black_box(size)));
+        });
+    }
+    create_group.finish();
 }
 
 criterion_group!(benches, criterion_benchmark);
