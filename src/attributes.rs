@@ -1,7 +1,7 @@
 
-/// AttributeType sets the type of an attribute in an AttributeSchema
+/// AttributeKind sets the general kind of an attribute in an AttributeSchema
 #[derive(Clone, Copy, PartialEq)]
-pub enum AttributeType {
+pub enum AttributeKind {
     /// ExactMatch attributes must match exactly to be considered
     ExactMatch,
 
@@ -19,12 +19,12 @@ pub enum AttributeType {
 ///
 /// ```
 /// let mut schema = attribute_search_engine::AttributeSchema::new();
-/// schema.register_attribute("zipcode", attribute_search_engine::AttributeType::ExactMatch);
-/// schema.register_attribute("age", attribute_search_engine::AttributeType::RangeMatch);
+/// schema.register_attribute("zipcode", attribute_search_engine::AttributeKind::ExactMatch);
+/// schema.register_attribute("age", attribute_search_engine::AttributeKind::RangeMatch);
 /// ```
 #[derive(Clone)]
 pub struct AttributeSchema {
-    attributes: Vec<(String, AttributeType)>,
+    attributes: Vec<(String, AttributeKind)>,
 }
 
 impl AttributeSchema {
@@ -36,7 +36,7 @@ impl AttributeSchema {
     }
 
     /// Register a new attribute on a schema
-    pub fn register_attribute(&mut self, name: &str, attr_type: AttributeType) {
+    pub fn register_attribute(&mut self, name: &str, attr_type: AttributeKind) {
         self.attributes.push((String::from(name), attr_type));
     }
 
@@ -46,7 +46,7 @@ impl AttributeSchema {
     }
 
     /// Return an iterator over all attributes
-    pub fn iter(&self) -> core::slice::Iter<(String, AttributeType)> {
+    pub fn iter(&self) -> core::slice::Iter<(String, AttributeKind)> {
         self.attributes.iter()
     }
 }

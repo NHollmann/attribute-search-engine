@@ -1,13 +1,13 @@
 use std::{hint::black_box, time::Duration};
 use criterion::{criterion_group, criterion_main, BenchmarkId, Criterion, PlotConfiguration};
-use attribute_search_engine::{AttributeSchema, AttributeType, SearchEngine};
+use attribute_search_engine::{AttributeSchema, AttributeKind, SearchEngine};
 
 fn create_engine(n: usize) {
     let mut schema = AttributeSchema::new();
-        schema.register_attribute("a", AttributeType::ExactMatch);
-        schema.register_attribute("b", AttributeType::ExactMatch);
-        schema.register_attribute("c", AttributeType::ExactMatch);
-        schema.register_attribute("d", AttributeType::ExactMatch);
+        schema.register_attribute("a", AttributeKind::ExactMatch);
+        schema.register_attribute("b", AttributeKind::ExactMatch);
+        schema.register_attribute("c", AttributeKind::ExactMatch);
+        schema.register_attribute("d", AttributeKind::ExactMatch);
 
         let mut engine = SearchEngine::new(&schema);
         for i in 0..n {
