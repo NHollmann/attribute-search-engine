@@ -1,4 +1,3 @@
-
 /// AttributeKind sets the general kind of an attribute in an AttributeSchema
 #[derive(Clone, Copy, PartialEq)]
 pub enum AttributeKind {

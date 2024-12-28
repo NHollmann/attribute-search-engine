@@ -1,9 +1,9 @@
 use std::collections::{HashMap, HashSet};
 
 use crate::attributes::*;
+use crate::error::*;
 use crate::index::*;
 use crate::query::*;
-use crate::error::*;
 
 pub struct SearchEngine {
     indices: HashMap<String, Box<dyn SearchIndex<usize>>>,
@@ -11,9 +11,7 @@ pub struct SearchEngine {
 
 impl SearchEngine {
     pub fn new(schema: &AttributeSchema) -> Self {
-        let mut indices = HashMap::with_capacity(
-            schema.count()
-        );
+        let mut indices = HashMap::with_capacity(schema.count());
 
         for (name, t) in schema.iter() {
             match t {
@@ -22,19 +20,19 @@ impl SearchEngine {
                         name.clone(),
                         Box::new(SearchIndexExact::<usize>::new()) as _,
                     );
-                },
+                }
                 AttributeKind::PrefixMatch => {
                     indices.insert(
                         name.clone(),
                         Box::new(SearchIndexPrefix::<usize>::new()) as _,
                     );
-                },
+                }
                 AttributeKind::RangeMatch => {
                     indices.insert(
                         name.clone(),
                         Box::new(SearchIndexRange::<usize>::new()) as _,
                     );
-                },
+                }
             }
         }
 
@@ -53,7 +51,10 @@ impl SearchEngine {
         attribute: &str,
         attribute_value: &str,
     ) -> Result<HashSet<usize>> {
-        let index = self.indices.get(attribute).ok_or(SearchEngineError::UnknownArgument)?;
+        let index = self
+            .indices
+            .get(attribute)
+            .ok_or(SearchEngineError::UnknownArgument)?;
         Ok(index.search(attribute_value))
     }
 

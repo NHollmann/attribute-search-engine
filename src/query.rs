@@ -1,4 +1,3 @@
-
 pub trait QueryPredicate {
     fn attribute(&self) -> String;
     fn value(&self) -> String;

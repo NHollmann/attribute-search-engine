@@ -10,9 +10,9 @@ pub enum SearchEngineError {
 impl std::error::Error for SearchEngineError {}
 
 impl fmt::Display for SearchEngineError {
-  fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-    match self {
-        SearchEngineError::UnknownArgument => write!(f, "Unknown argument error"),
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        match self {
+            SearchEngineError::UnknownArgument => write!(f, "Unknown argument error"),
+        }
     }
-  }
 }
