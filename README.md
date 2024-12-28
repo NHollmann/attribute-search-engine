@@ -12,7 +12,7 @@ Attribute Search Engine is a generic search engine for rows consisting of attrib
 - Rows
   - Attributes
     - ExactMatch  (HashMap)
-    - PrefixMatch (PrefixTree/Trie)
+    - PrefixMatch (PrefixTree/Trie) (Strings only)
     - RangeMatch  (BTreeMap)
 - Queries
   - Are in CNF (Conjunctive Normal Form)
