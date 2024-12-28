@@ -22,7 +22,12 @@ impl SearchEngine {
                         Box::new(SearchIndexExact::<usize>::new()) as _,
                     );
                 },
-                AttributeType::PrefixMatch => todo!(),
+                AttributeType::PrefixMatch => {
+                    indices.insert(
+                        name.clone(),
+                        Box::new(SearchIndexPrefix::<usize>::new()) as _,
+                    );
+                },
                 AttributeType::RangeMatch => {
                     indices.insert(
                         name.clone(),
