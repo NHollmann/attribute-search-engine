@@ -65,5 +65,15 @@ mod tests {
         ]);
         let result = engine.search(&q).expect("no errors during search");
         assert_eq!(result, HashSet::from_iter(vec![1, 5]));
+
+        let q = Query::Exclude(vec![
+            Query::Or(vec![
+                Query::ExactString("zipcode", "12345"),
+                Query::ExactString("pet", "Dog"),
+            ]),
+            Query::ExactString("name", "Hans"),
+        ]);
+        let result = engine.search(&q).expect("no errors during search");
+        assert_eq!(result, HashSet::from_iter(vec![0, 1, 2, 3, 5]));
     }
 }

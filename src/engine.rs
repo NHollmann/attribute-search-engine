@@ -66,7 +66,14 @@ impl SearchEngine {
             Query::OutRange(_, _, _) => todo!(),
             Query::Minimum(_, _) => todo!(),
             Query::Maximum(_, _) => todo!(),
-            Query::Or(vec) => todo!(),
+            Query::Or(vec) => {
+                let mut result_set = HashSet::<usize>::new();
+                for pred in vec.iter() {
+                    let attribute_set = self.search(pred)?;
+                    result_set = result_set.union(&attribute_set).copied().collect();
+                }
+                Ok(result_set)
+            },
             Query::And(vec) => {
                 let mut result_set = HashSet::<usize>::new();
                 for (i, pred) in vec.iter().enumerate() {
