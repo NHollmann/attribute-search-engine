@@ -56,10 +56,13 @@ mod tests {
             .expect("search attribute result to not be empty");
         assert_eq!(result, HashSet::from_iter(vec![0, 1, 2, 4, 5]));
 
-        let q = Query::new()
-            .include_equal("zipcode", "12345")
-            .include_equal("pet", "Dog")
-            .exclude_equal("name", "Hans");
+        let q = Query::Exclude(vec![
+            Query::And(vec![
+                Query::ExactString("zipcode", "12345"),
+                Query::ExactString("pet", "Dog"),
+            ]),
+            Query::ExactString("name", "Hans"),
+        ]);
         let result = engine.search(&q).expect("no errors during search");
         assert_eq!(result, HashSet::from_iter(vec![1, 5]));
     }

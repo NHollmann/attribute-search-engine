@@ -59,24 +59,44 @@ impl SearchEngine {
     }
 
     pub fn search(&self, query: &Query) -> Result<HashSet<usize>> {
-        let mut result_set = HashSet::<usize>::new();
-        for (i, pred) in query.include_predicates.iter().enumerate() {
-            let attribute_set = self.search_attribute(&pred.attribute(), &pred.value())?;
-            if i == 0 {
-                result_set = attribute_set;
-            } else {
-                result_set = result_set.intersection(&attribute_set).copied().collect();
+        match query {
+            Query::ExactString(attr, val) => self.search_attribute(attr, val),
+            Query::PrefixString(_, _) => todo!(),
+            Query::InRange(_, _, _) => todo!(),
+            Query::OutRange(_, _, _) => todo!(),
+            Query::Minimum(_, _) => todo!(),
+            Query::Maximum(_, _) => todo!(),
+            Query::Or(vec) => todo!(),
+            Query::And(vec) => {
+                let mut result_set = HashSet::<usize>::new();
+                for (i, pred) in vec.iter().enumerate() {
+                    let attribute_set = self.search(pred)?;
+                    if i == 0 {
+                        result_set = attribute_set;
+                    } else {
+                        result_set = result_set.intersection(&attribute_set).copied().collect();
+                    }
+                    if result_set.len() == 0 {
+                        return Ok(result_set);
+                    }
+                }
+                Ok(result_set)
             }
-            if result_set.len() == 0 {
-                return Ok(result_set);
-            }
+            Query::Exclude(vec) => {
+                let mut result_set = HashSet::<usize>::new();
+                for (i, pred) in vec.iter().enumerate() {
+                    let attribute_set = self.search(pred)?;
+                    if i == 0 {
+                        result_set = attribute_set;
+                    } else {
+                        result_set = result_set.difference(&attribute_set).copied().collect();
+                    }
+                    if result_set.len() == 0 {
+                        return Ok(result_set);
+                    }
+                }
+                Ok(result_set)
+            },
         }
-
-        for pred in query.exclude_predicates.iter() {
-            let attribute_set = self.search_attribute(&pred.attribute(), &pred.value())?;
-            result_set = result_set.difference(&attribute_set).copied().collect();
-        }
-
-        Ok(result_set)
     }
 }
