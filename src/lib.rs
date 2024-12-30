@@ -13,6 +13,8 @@ pub use query::Query;
 mod tests {
     use std::collections::HashSet;
 
+    use query::QueryValue;
+
     use super::*;
 
     #[test]
@@ -58,20 +60,20 @@ mod tests {
 
         let q = Query::Exclude(vec![
             Query::And(vec![
-                Query::ExactString("zipcode", "12345"),
-                Query::ExactString("pet", "Dog"),
+                Query::ExactString("zipcode", QueryValue::Str("12345")),
+                Query::ExactString("pet", QueryValue::Str("Dog")),
             ]),
-            Query::ExactString("name", "Hans"),
+            Query::ExactString("name", QueryValue::Str("Hans")),
         ]);
         let result = engine.search(&q).expect("no errors during search");
         assert_eq!(result, HashSet::from_iter(vec![1, 5]));
 
         let q = Query::Exclude(vec![
             Query::Or(vec![
-                Query::ExactString("zipcode", "12345"),
-                Query::ExactString("pet", "Dog"),
+                Query::ExactString("zipcode", QueryValue::Str("12345")),
+                Query::ExactString("pet", QueryValue::Str("Dog")),
             ]),
-            Query::ExactString("name", "Hans"),
+            Query::ExactString("name", QueryValue::Str("Hans")),
         ]);
         let result = engine.search(&q).expect("no errors during search");
         assert_eq!(result, HashSet::from_iter(vec![0, 1, 2, 3, 5]));

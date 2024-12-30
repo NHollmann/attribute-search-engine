@@ -60,7 +60,8 @@ impl SearchEngine {
 
     pub fn search(&self, query: &Query) -> Result<HashSet<usize>> {
         match query {
-            Query::ExactString(attr, val) => self.search_attribute(attr, val),
+            Query::ExactString(attr, QueryValue::Str(val)) => self.search_attribute(attr, val),
+            Query::ExactString(_attr, _val) => Err(SearchEngineError::MismatchedQueryType),
             Query::PrefixString(_, _) => todo!(),
             Query::InRange(_, _, _) => todo!(),
             Query::OutRange(_, _, _) => todo!(),
