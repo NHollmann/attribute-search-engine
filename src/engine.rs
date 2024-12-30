@@ -74,7 +74,7 @@ impl SearchEngine {
                     result_set = result_set.union(&attribute_set).copied().collect();
                 }
                 Ok(result_set)
-            },
+            }
             Query::And(vec) => {
                 let mut result_set = HashSet::<usize>::new();
                 for (i, pred) in vec.iter().enumerate() {
@@ -104,7 +104,7 @@ impl SearchEngine {
                     }
                 }
                 Ok(result_set)
-            },
+            }
         }
     }
 }

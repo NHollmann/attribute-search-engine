@@ -1,3 +1,5 @@
+use crate::error::*;
+use regex::Regex;
 
 /// Query value sum type
 pub enum QueryValue<'a> {
@@ -26,4 +28,21 @@ pub enum Query<'a> {
     Or(Vec<Query<'a>>),
     And(Vec<Query<'a>>),
     Exclude(Vec<Query<'a>>),
+}
+
+impl<'a> Query<'a> {
+    pub fn from_str(query_str: &'a str) -> Result<Self> {
+        // TODO: Support numbers, comma sperators (OR) and minus symbols (RANGES)
+        let re = Regex::new(r"([\+-])(\w):(\w)").expect("the regex to compile");
+        let mut results = vec![];
+        for (_, [modifiery, attribute, value]) in re.captures_iter(query_str).map(|c| c.extract()) {
+            results.push((
+                modifiery,
+                attribute,
+                value,
+            ));
+        }
+        // TODO: Transform captures to a query
+        Ok(Query::ExactString(query_str, QueryValue::Str(query_str)))
+    }
 }

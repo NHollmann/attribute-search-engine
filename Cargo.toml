@@ -12,6 +12,7 @@ keywords = ["search-engine", "attributes"]
 publish = ["crates-io"]
 
 [dependencies]
+regex = "1.11.1"
 trie-rs = "=0.4.2"
 
 [dev-dependencies]

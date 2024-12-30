@@ -7,13 +7,11 @@ mod query;
 pub use attributes::*;
 pub use engine::*;
 pub use error::*;
-pub use query::Query;
+pub use query::*;
 
 #[cfg(test)]
 mod tests {
     use std::collections::HashSet;
-
-    use query::QueryValue;
 
     use super::*;
 
