@@ -1,3 +1,4 @@
+use crate::{Query, QueryValue, Result, SearchEngineError};
 use std::{
     collections::{BTreeMap, HashMap, HashSet},
     hash::Hash,
@@ -6,7 +7,7 @@ use trie_rs::map::{Trie, TrieBuilder};
 
 pub trait SearchIndex<P: Eq + Hash + Clone> {
     fn insert(&mut self, primary_id: P, attribute_value: String);
-    fn search(&self, attribute_value: &str) -> HashSet<P>;
+    fn search(&self, query: &Query) -> Result<HashSet<P>>;
 }
 
 pub struct SearchIndexExact<P: Eq + Hash + Clone> {
@@ -29,11 +30,17 @@ impl<P: Eq + Hash + Clone> SearchIndex<P> for SearchIndexExact<P> {
             .insert(primary_id);
     }
 
-    fn search(&self, attribute_value: &str) -> HashSet<P> {
-        self.index
+    fn search(&self, query: &Query) -> Result<HashSet<P>> {
+        let attribute_value = match query {
+            Query::Exact(_, QueryValue::Str(value)) => Ok(value),
+            Query::Exact(_, _) => Err(SearchEngineError::MismatchedQueryType),
+            _ => Err(SearchEngineError::UnsupportedQuery),
+        }?;
+        Ok(self
+            .index
             .get(attribute_value)
             .cloned()
-            .unwrap_or(HashSet::<P>::new())
+            .unwrap_or(HashSet::<P>::new()))
     }
 }
 
@@ -59,13 +66,22 @@ impl<P: Eq + Hash + Ord + Clone> SearchIndex<P> for SearchIndexPrefix<P> {
         self.builder.push(attribute_value, hs);
     }
 
-    fn search(&self, attribute_value: &str) -> HashSet<P> {
-        self.index
-            .as_ref()
-            .unwrap() // TODO Do not simply unwrap
-            .exact_match(attribute_value)
-            .cloned()
-            .unwrap_or(HashSet::<P>::new())
+    fn search(&self, query: &Query) -> Result<HashSet<P>> {
+        match query {
+            Query::Exact(_, QueryValue::Str(value)) => {
+                Ok(self
+                    .index
+                    .as_ref()
+                    .unwrap() // TODO Do not simply unwrap
+                    .exact_match(value)
+                    .cloned()
+                    .unwrap_or(HashSet::<P>::new()))
+            }
+            Query::Exact(_, _) => Err(SearchEngineError::MismatchedQueryType),
+            Query::Prefix(_, QueryValue::Str(_prefix)) => todo!(),
+            Query::Prefix(_, _) => Err(SearchEngineError::MismatchedQueryType),
+            _ => Err(SearchEngineError::UnsupportedQuery),
+        }
     }
 }
 
@@ -89,10 +105,15 @@ impl<P: Eq + Hash + Clone> SearchIndex<P> for SearchIndexRange<P> {
             .insert(primary_id);
     }
 
-    fn search(&self, attribute_value: &str) -> HashSet<P> {
-        self.index
-            .get(attribute_value)
-            .cloned()
-            .unwrap_or(HashSet::<P>::new())
+    fn search(&self, query: &Query) -> Result<HashSet<P>> {
+        match query {
+            Query::Exact(_, QueryValue::Str(value)) => Ok(self
+                .index
+                .get(value)
+                .cloned()
+                .unwrap_or(HashSet::<P>::new())),
+            Query::Exact(_, _) => Err(SearchEngineError::MismatchedQueryType),
+            _ => Err(SearchEngineError::UnsupportedQuery),
+        }
     }
 }

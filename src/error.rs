@@ -6,6 +6,7 @@ pub type Result<T> = result::Result<T, SearchEngineError>;
 pub enum SearchEngineError {
     UnknownArgument,
     MismatchedQueryType,
+    UnsupportedQuery,
     InvalidQuery,
 }
 
@@ -16,6 +17,7 @@ impl fmt::Display for SearchEngineError {
         match self {
             SearchEngineError::UnknownArgument => write!(f, "Unknown argument error"),
             SearchEngineError::MismatchedQueryType => write!(f, "Mismatched query type"),
+            SearchEngineError::UnsupportedQuery => write!(f, "Unsupported query"),
             SearchEngineError::InvalidQuery => write!(f, "Invalid query string"),
         }
     }

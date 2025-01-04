@@ -1,3 +1,4 @@
+use regex::Regex;
 use std::collections::{HashMap, HashSet};
 
 use crate::attributes::*;
@@ -46,27 +47,20 @@ impl SearchEngine {
         }
     }
 
-    pub fn search_attribute(
-        &self,
-        attribute: &str,
-        attribute_value: &str,
-    ) -> Result<HashSet<usize>> {
-        let index = self
-            .indices
-            .get(attribute)
-            .ok_or(SearchEngineError::UnknownArgument)?;
-        Ok(index.search(attribute_value))
-    }
-
     pub fn search(&self, query: &Query) -> Result<HashSet<usize>> {
         match query {
-            Query::ExactString(attr, QueryValue::Str(val)) => self.search_attribute(attr, val),
-            Query::ExactString(_attr, _val) => Err(SearchEngineError::MismatchedQueryType),
-            Query::PrefixString(_, _) => todo!(),
-            Query::InRange(_, _, _) => todo!(),
-            Query::OutRange(_, _, _) => todo!(),
-            Query::Minimum(_, _) => todo!(),
-            Query::Maximum(_, _) => todo!(),
+            Query::Exact(attr, _)
+            | Query::Prefix(attr, _)
+            | Query::InRange(attr, _, _)
+            | Query::OutRange(attr, _, _)
+            | Query::Minimum(attr, _)
+            | Query::Maximum(attr, _) => {
+                let index = self
+                    .indices
+                    .get(attr)
+                    .ok_or(SearchEngineError::UnknownArgument)?;
+                index.search(query)
+            }
             Query::Or(vec) => {
                 let mut result_set = HashSet::<usize>::new();
                 for pred in vec.iter() {
@@ -106,5 +100,21 @@ impl SearchEngine {
                 Ok(result_set)
             }
         }
+    }
+
+    pub fn query_from_str(query_str: &str) -> Result<Query> {
+        // TODO: Support numbers, comma sperators (OR) and minus symbols (RANGES)
+        let re = Regex::new(r"([\+-])(\w):(\w)").expect("the regex to compile");
+        let mut results = vec![];
+        for (_, [modifiery, attribute, value]) in re.captures_iter(query_str).map(|c| c.extract()) {
+            results.push((modifiery, attribute, value));
+        }
+        // TODO: Transform captures to a query
+        Ok(Query::Exact(
+            query_str.into(),
+            QueryValue::Str(query_str.into()),
+        ))
+
+        // // Err(SearchEngineError::InvalidQuery)
     }
 }

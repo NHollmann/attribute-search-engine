@@ -51,27 +51,26 @@ mod tests {
         engine.insert(5, "pet", "Dog");
         engine.insert(5, "pet", "Cat");
 
-        let result = engine
-            .search_attribute("zipcode", "12345")
-            .expect("search attribute result to not be empty");
+        let q = Query::Exact("zipcode".into(), QueryValue::Str("12345".into()));
+        let result = engine.search(&q).expect("no errors during search");
         assert_eq!(result, HashSet::from_iter(vec![0, 1, 2, 4, 5]));
 
         let q = Query::Exclude(vec![
             Query::And(vec![
-                Query::ExactString("zipcode", QueryValue::Str("12345")),
-                Query::ExactString("pet", QueryValue::Str("Dog")),
+                Query::Exact("zipcode".into(), QueryValue::Str("12345".into())),
+                Query::Exact("pet".into(), QueryValue::Str("Dog".into())),
             ]),
-            Query::ExactString("name", QueryValue::Str("Hans")),
+            Query::Exact("name".into(), QueryValue::Str("Hans".into())),
         ]);
         let result = engine.search(&q).expect("no errors during search");
         assert_eq!(result, HashSet::from_iter(vec![1, 5]));
 
         let q = Query::Exclude(vec![
             Query::Or(vec![
-                Query::ExactString("zipcode", QueryValue::Str("12345")),
-                Query::ExactString("pet", QueryValue::Str("Dog")),
+                Query::Exact("zipcode".into(), QueryValue::Str("12345".into())),
+                Query::Exact("pet".into(), QueryValue::Str("Dog".into())),
             ]),
-            Query::ExactString("name", QueryValue::Str("Hans")),
+            Query::Exact("name".into(), QueryValue::Str("Hans".into())),
         ]);
         let result = engine.search(&q).expect("no errors during search");
         assert_eq!(result, HashSet::from_iter(vec![0, 1, 2, 3, 5]));
