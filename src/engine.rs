@@ -84,15 +84,11 @@ impl SearchEngine {
                 }
                 Ok(result_set)
             }
-            Query::Exclude(vec) => {
-                let mut result_set = HashSet::<usize>::new();
-                for (i, pred) in vec.iter().enumerate() {
+            Query::Exclude(base, exclude) => {
+                let mut result_set = self.search(base)?;
+                for pred in exclude.iter() {
                     let attribute_set = self.search(pred)?;
-                    if i == 0 {
-                        result_set = attribute_set;
-                    } else {
-                        result_set = result_set.difference(&attribute_set).copied().collect();
-                    }
+                    result_set = result_set.difference(&attribute_set).copied().collect();
                     if result_set.len() == 0 {
                         return Ok(result_set);
                     }
@@ -102,19 +98,28 @@ impl SearchEngine {
         }
     }
 
-    pub fn query_from_str(query_str: &str) -> Result<Query> {
-        // TODO: Support numbers, comma sperators (OR) and minus symbols (RANGES)
-        let re = Regex::new(r"([\+-])(\w):(\w)").expect("the regex to compile");
-        let mut results = vec![];
-        for (_, [modifiery, attribute, value]) in re.captures_iter(query_str).map(|c| c.extract()) {
-            results.push((modifiery, attribute, value));
-        }
-        // TODO: Transform captures to a query
-        Ok(Query::Exact(
-            query_str.into(),
-            QueryValue::Str(query_str.into()),
-        ))
+    pub fn query_from_str(&self, query_str: &str) -> Result<Query> {
+        let attr_re = Regex::new(r"(\+|-)(\w+):(\S*)").expect("the regex to compile");
 
-        // // Err(SearchEngineError::InvalidQuery)
+        let mut include = vec![];
+        let mut exclude = vec![];
+        for (_, [modifier, attribute, value]) in
+            attr_re.captures_iter(query_str).map(|c| c.extract())
+        {
+            let new_predicate =
+                Query::Exact(attribute.to_owned(), QueryValue::Str(value.to_owned()));
+            if modifier == "+" {
+                include.push(new_predicate);
+            } else {
+                exclude.push(new_predicate);
+            }
+        }
+
+        let base_query = Query::And(include);
+        if exclude.len() > 0 {
+            Ok(Query::Exclude(base_query.into(), exclude))
+        } else {
+            Ok(base_query)
+        }
     }
 }

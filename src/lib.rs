@@ -55,24 +55,32 @@ mod tests {
         let result = engine.search(&q).expect("no errors during search");
         assert_eq!(result, HashSet::from_iter(vec![0, 1, 2, 4, 5]));
 
-        let q = Query::Exclude(vec![
+        let q = Query::Exclude(
             Query::And(vec![
                 Query::Exact("zipcode".into(), QueryValue::Str("12345".into())),
                 Query::Exact("pet".into(), QueryValue::Str("Dog".into())),
-            ]),
-            Query::Exact("name".into(), QueryValue::Str("Hans".into())),
-        ]);
+            ])
+            .into(),
+            vec![Query::Exact("name".into(), QueryValue::Str("Hans".into()))],
+        );
         let result = engine.search(&q).expect("no errors during search");
         assert_eq!(result, HashSet::from_iter(vec![1, 5]));
 
-        let q = Query::Exclude(vec![
+        let q = Query::Exclude(
             Query::Or(vec![
                 Query::Exact("zipcode".into(), QueryValue::Str("12345".into())),
                 Query::Exact("pet".into(), QueryValue::Str("Dog".into())),
-            ]),
-            Query::Exact("name".into(), QueryValue::Str("Hans".into())),
-        ]);
+            ])
+            .into(),
+            vec![Query::Exact("name".into(), QueryValue::Str("Hans".into()))],
+        );
         let result = engine.search(&q).expect("no errors during search");
         assert_eq!(result, HashSet::from_iter(vec![0, 1, 2, 3, 5]));
+
+        let q = engine
+            .query_from_str("+zipcode:12345 +pet:Dog -name:Hans")
+            .expect("valid query");
+        let result = engine.search(&q).expect("no errors during search");
+        assert_eq!(result, HashSet::from_iter(vec![1, 5]));
     }
 }

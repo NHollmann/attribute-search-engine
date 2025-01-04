@@ -1,4 +1,5 @@
 /// Query value sum type
+#[derive(Debug)]
 pub enum QueryValue {
     Str(String),
     Sint64(i64),
@@ -12,6 +13,7 @@ pub enum QueryValue {
 }
 
 /// Query sum type
+#[derive(Debug)]
 pub enum Query {
     Exact(String, QueryValue),
     Prefix(String, QueryValue),
@@ -22,5 +24,5 @@ pub enum Query {
 
     Or(Vec<Query>),
     And(Vec<Query>),
-    Exclude(Vec<Query>),
+    Exclude(Box<Query>, Vec<Query>),
 }

@@ -7,7 +7,6 @@ pub enum SearchEngineError {
     UnknownArgument,
     MismatchedQueryType,
     UnsupportedQuery,
-    InvalidQuery,
 }
 
 impl std::error::Error for SearchEngineError {}
@@ -18,7 +17,6 @@ impl fmt::Display for SearchEngineError {
             SearchEngineError::UnknownArgument => write!(f, "Unknown argument error"),
             SearchEngineError::MismatchedQueryType => write!(f, "Mismatched query type"),
             SearchEngineError::UnsupportedQuery => write!(f, "Unsupported query"),
-            SearchEngineError::InvalidQuery => write!(f, "Invalid query string"),
         }
     }
 }
