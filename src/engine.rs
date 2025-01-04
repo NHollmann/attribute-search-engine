@@ -40,11 +40,18 @@ impl SearchEngine {
         Self { indices }
     }
 
-    pub fn insert(&mut self, primary_id: usize, attribute: &str, attribute_value: &str) {
-        match self.indices.get_mut(attribute) {
-            Some(index) => index.insert(primary_id, attribute_value.to_string()),
-            _ => {}
-        }
+    pub fn insert(
+        &mut self,
+        primary_id: usize,
+        attribute: &str,
+        attribute_value: &str,
+    ) -> Result<()> {
+        let index = self
+            .indices
+            .get_mut(attribute)
+            .ok_or(SearchEngineError::UnknownArgument)?;
+        index.insert(primary_id, attribute_value.to_string());
+        Ok(())
     }
 
     pub fn search(&self, query: &Query) -> Result<HashSet<usize>> {

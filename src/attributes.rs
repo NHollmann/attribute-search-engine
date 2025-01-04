@@ -1,13 +1,13 @@
-/// AttributeKind sets the general kind of an attribute in an AttributeSchema
-#[derive(Clone, Copy, PartialEq)]
+/// AttributeKind sets the general kind of an attribute in an AttributeSchema.
+#[derive(Debug, Clone, Copy, PartialEq)]
 pub enum AttributeKind {
-    /// ExactMatch attributes must match exactly to be considered
+    /// ExactMatch attributes must match exactly to be considered.
     ExactMatch,
 
-    /// PrefixMatch attributes only need to match on the beginning
+    /// PrefixMatch attributes only need to match on the beginning.
     PrefixMatch,
 
-    /// RangeMatch attributes can be sorted and searched by range
+    /// RangeMatch attributes can be sorted and searched by range.
     RangeMatch,
 }
 
@@ -27,25 +27,48 @@ pub struct AttributeSchema {
 }
 
 impl AttributeSchema {
-    /// Create a new AttributeSchema
+    /// Create a new AttributeSchema.
     pub fn new() -> Self {
         Self {
             attributes: Vec::new(),
         }
     }
 
-    /// Register a new attribute on a schema
+    /// Register a new attribute on a schema.
     pub fn register_attribute(&mut self, name: &str, attr_type: AttributeKind) {
         self.attributes.push((String::from(name), attr_type));
     }
 
-    /// Get the count of attributes in this schema
+    /// Get the count of attributes in this schema.
     pub fn count(&self) -> usize {
         self.attributes.len()
     }
 
-    /// Return an iterator over all attributes
+    /// Return an iterator over all attributes.
     pub fn iter(&self) -> core::slice::Iter<(String, AttributeKind)> {
         self.attributes.iter()
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn attribute_schema() {
+        let mut schema = AttributeSchema::new();
+        schema.register_attribute("zipcode", AttributeKind::ExactMatch);
+        schema.register_attribute("age", AttributeKind::RangeMatch);
+        schema.register_attribute("lastname", AttributeKind::PrefixMatch);
+
+        assert_eq!(schema.count(), 3);
+        assert_eq!(
+            schema.attributes,
+            vec![
+                ("zipcode".to_owned(), AttributeKind::ExactMatch),
+                ("age".to_owned(), AttributeKind::RangeMatch),
+                ("lastname".to_owned(), AttributeKind::PrefixMatch),
+            ]
+        );
     }
 }

@@ -11,18 +11,18 @@ fn create_engine(n: usize) {
 
     let mut engine = SearchEngine::new(&schema);
     for i in 0..n {
-        engine.insert(i, "a", &format!("{}", i % 10));
+        engine.insert(i, "a", &format!("{}", i % 10)).unwrap();
         if i % 2 == 0 {
-            engine.insert(i, "b", &format!("{}", i % 3));
+            engine.insert(i, "b", &format!("{}", i % 3)).unwrap();
         }
         if i % 5 == 0 {
-            engine.insert(i, "c", &format!("{}", i % 25));
+            engine.insert(i, "c", &format!("{}", i % 25)).unwrap();
         }
         if i % 5 == 2 {
-            engine.insert(i, "b", &format!("{}", i % 13));
+            engine.insert(i, "b", &format!("{}", i % 13)).unwrap();
         }
         if i % 7 == 0 {
-            engine.insert(i, "d", &format!("{}", i % 5));
+            engine.insert(i, "d", &format!("{}", i % 5)).unwrap();
         }
     }
 }

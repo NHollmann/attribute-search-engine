@@ -1,4 +1,4 @@
-/// Query value sum type
+/// A QueryValue encodes the type and value of a leaf [Query].
 #[derive(Debug)]
 pub enum QueryValue {
     Str(String),
@@ -12,7 +12,8 @@ pub enum QueryValue {
     Uint8(u8),
 }
 
-/// Query sum type
+/// Query is a recursive datatype that describes a
+/// query to a search index or engine.
 #[derive(Debug)]
 pub enum Query {
     Exact(String, QueryValue),
