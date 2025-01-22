@@ -1,6 +1,8 @@
 use std::collections::HashSet;
 
-use attribute_search_engine::{Query, SearchEngine, SearchIndexBuilder, SearchIndexExact};
+use attribute_search_engine::{
+    Query, SearchEngine, SearchIndexBuilder, SearchIndexExact, SearchIndexRange,
+};
 
 #[test]
 fn basic_example() {
@@ -8,7 +10,7 @@ fn basic_example() {
     let mut index_zipcode = SearchIndexExact::<_, String>::new();
     let mut index_city = SearchIndexExact::<_, String>::new();
     let mut index_pet = SearchIndexExact::<_, String>::new();
-    let mut index_age = SearchIndexExact::<_, u8>::new();
+    let mut index_age = SearchIndexRange::<_, u8>::new();
 
     index_name.insert(0, "Alice".into());
     index_zipcode.insert(0, "12345".into());
@@ -60,6 +62,22 @@ fn basic_example() {
     let result = engine.search(&q).expect("no errors during search");
     assert_eq!(result, HashSet::from_iter(vec![0, 1, 2, 4, 5]));
 
+    let q = Query::InRange("age".into(), "24".into(), "34".into());
+    let result = engine.search(&q).expect("no errors during search");
+    assert_eq!(result, HashSet::from_iter(vec![0, 1, 3, 4]));
+
+    let q = Query::OutRange("age".into(), "25".into(), "34".into());
+    let result = engine.search(&q).expect("no errors during search");
+    assert_eq!(result, HashSet::from_iter(vec![2, 5]));
+
+    let q = Query::Minimum("age".into(), "27".into());
+    let result = engine.search(&q).expect("no errors during search");
+    assert_eq!(result, HashSet::from_iter(vec![0, 1, 4, 5]));
+
+    let q = Query::Maximum("age".into(), "27".into());
+    let result = engine.search(&q).expect("no errors during search");
+    assert_eq!(result, HashSet::from_iter(vec![0, 1, 2, 3]));
+
     let q = Query::Exclude(
         Query::And(vec![
             Query::Exact("zipcode".into(), "12345".into()),
@@ -88,9 +106,7 @@ fn basic_example() {
     let result = engine.search(&q).expect("no errors during search");
     assert_eq!(result, HashSet::from_iter(vec![1, 5]));
 
-    let q = engine
-        .query_from_str("+age:27")
-        .expect("valid query");
+    let q = engine.query_from_str("+age:27").expect("valid query");
     let result = engine.search(&q).expect("no errors during search");
     assert_eq!(result, HashSet::from_iter(vec![0, 1]));
 }

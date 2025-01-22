@@ -1,4 +1,4 @@
-use super::{SearchIndex, SearchIndexBuilder};
+use super::{query_string_to_type, SearchIndex, SearchIndexBuilder};
 use crate::{Query, Result, SearchEngineError};
 use std::{
     collections::{HashMap, HashSet},
@@ -55,17 +55,14 @@ where
 
 impl<P: Clone, V: Eq + Hash + FromStr> SearchIndex<P> for SearchIndexExact<P, V> {
     fn search(&self, query: &Query) -> Result<HashSet<P>> {
-        let attribute_value_str = match query {
+        let value_str = match query {
             Query::Exact(_, value) => Ok(value),
             _ => Err(SearchEngineError::UnsupportedQuery),
         }?;
-        let attribute_value: V = attribute_value_str
-            .parse()
-            .map_err(|_| SearchEngineError::MismatchedQueryType)?;
-
+        let value: V = query_string_to_type(value_str)?;
         Ok(self
             .index
-            .get(&attribute_value)
+            .get(&value)
             .cloned()
             .unwrap_or(HashSet::<P>::new()))
     }
