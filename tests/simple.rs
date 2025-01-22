@@ -1,13 +1,9 @@
 use std::collections::HashSet;
 
-use attribute_search_engine::{
-    AttributeSchema, Query, SearchEngine, SearchIndexBuilder, SearchIndexExact,
-};
+use attribute_search_engine::{Query, SearchEngine, SearchIndexBuilder, SearchIndexExact};
 
 #[test]
 fn basic_example() {
-    let mut engine = SearchEngine::new(&AttributeSchema::new());
-
     let mut index_name = SearchIndexExact::<_, String>::new();
     let mut index_zipcode = SearchIndexExact::<_, String>::new();
     let mut index_city = SearchIndexExact::<_, String>::new();
@@ -41,6 +37,7 @@ fn basic_example() {
     index_pet.insert(5, "Dog".into());
     index_pet.insert(5, "Cat".into());
 
+    let mut engine = SearchEngine::new();
     engine.add_index("name", index_name);
     engine.add_index("zipcode", index_zipcode);
     engine.add_index("city", index_city);

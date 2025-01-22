@@ -1,9 +1,8 @@
-use attribute_search_engine::{AttributeSchema, SearchEngine, SearchIndexBuilder, SearchIndexExact};
+use attribute_search_engine::{SearchEngine, SearchIndexBuilder, SearchIndexExact};
 use criterion::{criterion_group, criterion_main, BenchmarkId, Criterion, PlotConfiguration};
 use std::{hint::black_box, time::Duration};
 
 fn create_engine(n: usize) {
-    
     let mut index_a = SearchIndexExact::<_, String>::new();
     let mut index_b = SearchIndexExact::<_, String>::new();
     let mut index_c = SearchIndexExact::<_, String>::new();
@@ -24,7 +23,7 @@ fn create_engine(n: usize) {
             index_d.insert(i, format!("{}", i % 5));
         }
     }
-    let mut engine = SearchEngine::<usize>::new(&AttributeSchema::new());
+    let mut engine = SearchEngine::<usize>::new();
     engine.add_index("a", index_a);
     engine.add_index("b", index_b);
     engine.add_index("c", index_c);

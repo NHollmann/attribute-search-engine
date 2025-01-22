@@ -1,6 +1,6 @@
 /// Query is a recursive datatype that describes a
 /// query to a search index or engine.
-#[derive(Debug)]
+#[derive(Debug, PartialEq)]
 pub enum Query {
     Exact(String, String),
     Prefix(String, String),

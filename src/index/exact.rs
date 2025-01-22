@@ -5,11 +5,29 @@ use std::{
     hash::Hash,
 };
 
+/// SearchIndexExact is a index that can only match exact attribute values.
+///
+/// # Example
+/// ```
+/// use attribute_search_engine::{SearchIndex, SearchIndexBuilder, SearchIndexExact};
+/// use std::collections::HashSet;
+/// use attribute_search_engine::Query;
+///
+/// let mut index_city = SearchIndexExact::<usize, String>::new();
+/// index_city.insert(0, "Berlin".into());
+/// index_city.insert(1, "New York".into());
+/// index_city.insert(2, "Madrid".into());
+///
+/// let index_city = index_city.build();
+/// let result = index_city.search(&Query::Exact("<not used>".into(), "New York".into())).unwrap();
+/// assert_eq!(result, HashSet::from_iter(vec![1]));
+/// ```
 pub struct SearchIndexExact<P, V> {
     index: HashMap<V, HashSet<P>>,
 }
 
 impl<P, V> SearchIndexExact<P, V> {
+    /// Create a new SearchIndexExact.
     pub fn new() -> Self {
         Self {
             index: HashMap::new(),

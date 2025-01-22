@@ -2,7 +2,6 @@ use regex::Regex;
 use std::collections::{HashMap, HashSet};
 use std::hash::Hash;
 
-use crate::attributes::*;
 use crate::error::*;
 use crate::index::*;
 use crate::query::*;
@@ -12,7 +11,7 @@ pub struct SearchEngine<P: Eq + Hash + Clone + 'static> {
 }
 
 impl<P: Eq + Hash + Clone + 'static> SearchEngine<P> {
-    pub fn new(_schema: &AttributeSchema) -> Self {
+    pub fn new() -> Self {
         Self {
             indices: HashMap::new(),
         }
@@ -95,5 +94,32 @@ impl<P: Eq + Hash + Clone + 'static> SearchEngine<P> {
         } else {
             Ok(base_query)
         }
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn query_parser() {
+        let engine = SearchEngine::<usize>::new();
+
+        let q = engine.query_from_str("").unwrap();
+        assert_eq!(q, Query::And(vec![]));
+
+        let q = engine
+            .query_from_str("+zipcode:12345 +pet:Dog -name:Hans")
+            .unwrap();
+        assert_eq!(
+            q,
+            Query::Exclude(
+                Box::new(Query::And(vec![
+                    Query::Exact("zipcode".into(), "12345".into()),
+                    Query::Exact("pet".into(), "Dog".into())
+                ])),
+                vec![Query::Exact("name".into(), "Hans".into())]
+            )
+        );
     }
 }
