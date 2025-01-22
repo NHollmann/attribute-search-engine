@@ -6,11 +6,11 @@ use crate::error::*;
 use crate::index::*;
 use crate::query::*;
 
-pub struct SearchEngine<P: Eq + Hash + Clone + 'static> {
+pub struct SearchEngine<P> {
     indices: HashMap<String, Box<dyn SearchIndex<P>>>,
 }
 
-impl<P: Eq + Hash + Clone + 'static> SearchEngine<P> {
+impl<P: Eq + Hash + Clone> SearchEngine<P> {
     pub fn new() -> Self {
         Self {
             indices: HashMap::new(),
