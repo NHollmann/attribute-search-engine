@@ -1,30 +1,34 @@
-use attribute_search_engine::{AttributeKind, AttributeSchema, SearchEngine};
+use attribute_search_engine::{AttributeSchema, SearchEngine, SearchIndexBuilder, SearchIndexExact};
 use criterion::{criterion_group, criterion_main, BenchmarkId, Criterion, PlotConfiguration};
 use std::{hint::black_box, time::Duration};
 
 fn create_engine(n: usize) {
-    let mut schema = AttributeSchema::new();
-    schema.register_attribute("a", AttributeKind::ExactMatch);
-    schema.register_attribute("b", AttributeKind::ExactMatch);
-    schema.register_attribute("c", AttributeKind::ExactMatch);
-    schema.register_attribute("d", AttributeKind::ExactMatch);
+    
+    let mut index_a = SearchIndexExact::<_, String>::new();
+    let mut index_b = SearchIndexExact::<_, String>::new();
+    let mut index_c = SearchIndexExact::<_, String>::new();
+    let mut index_d = SearchIndexExact::<_, String>::new();
 
-    let mut engine = SearchEngine::new(&schema);
     for i in 0..n {
-        engine.insert(i, "a", &format!("{}", i % 10)).unwrap();
+        index_a.insert(i, format!("{}", i % 10));
         if i % 2 == 0 {
-            engine.insert(i, "b", &format!("{}", i % 3)).unwrap();
+            index_b.insert(i, format!("{}", i % 3));
         }
         if i % 5 == 0 {
-            engine.insert(i, "c", &format!("{}", i % 25)).unwrap();
+            index_c.insert(i, format!("{}", i % 25));
         }
         if i % 5 == 2 {
-            engine.insert(i, "b", &format!("{}", i % 13)).unwrap();
+            index_b.insert(i, format!("{}", i % 13));
         }
         if i % 7 == 0 {
-            engine.insert(i, "d", &format!("{}", i % 5)).unwrap();
+            index_d.insert(i, format!("{}", i % 5));
         }
     }
+    let mut engine = SearchEngine::<usize>::new(&AttributeSchema::new());
+    engine.add_index("a", index_a);
+    engine.add_index("b", index_b);
+    engine.add_index("c", index_c);
+    engine.add_index("d", index_d);
 }
 
 fn criterion_benchmark(c: &mut Criterion) {

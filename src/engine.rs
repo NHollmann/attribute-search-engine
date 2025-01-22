@@ -12,33 +12,14 @@ pub struct SearchEngine<P: Eq + Hash + Clone + 'static> {
 }
 
 impl<P: Eq + Hash + Clone + 'static> SearchEngine<P> {
-    pub fn new(schema: &AttributeSchema) -> Self {
-        let mut indices = HashMap::with_capacity(schema.count());
-
-        for (name, t) in schema.iter() {
-            match t {
-                AttributeKind::ExactMatch => {
-                    indices.insert(name.clone(), Box::new(SearchIndexExact::<P>::new()) as _);
-                }
-                AttributeKind::PrefixMatch => {
-                    indices.insert(name.clone(), Box::new(SearchIndexPrefix::<P>::new()) as _);
-                }
-                AttributeKind::RangeMatch => {
-                    indices.insert(name.clone(), Box::new(SearchIndexRange::<P>::new()) as _);
-                }
-            }
+    pub fn new(_schema: &AttributeSchema) -> Self {
+        Self {
+            indices: HashMap::new(),
         }
-
-        Self { indices }
     }
 
-    pub fn insert(&mut self, primary_id: P, attribute: &str, attribute_value: &str) -> Result<()> {
-        let index = self
-            .indices
-            .get_mut(attribute)
-            .ok_or(SearchEngineError::UnknownArgument)?;
-        index.insert(primary_id, attribute_value.to_string());
-        Ok(())
+    pub fn add_index<V>(&mut self, name: &str, index_builder: impl SearchIndexBuilder<P, V>) {
+        self.indices.insert(name.into(), index_builder.build());
     }
 
     pub fn search(&self, query: &Query) -> Result<HashSet<P>> {

@@ -1,42 +1,50 @@
 use std::collections::HashSet;
 
-use attribute_search_engine::{AttributeKind, AttributeSchema, Query, SearchEngine};
+use attribute_search_engine::{
+    AttributeSchema, Query, SearchEngine, SearchIndexBuilder, SearchIndexExact,
+};
 
 #[test]
 fn basic_example() {
-    let mut schema = AttributeSchema::new();
-    schema.register_attribute("name", AttributeKind::ExactMatch);
-    schema.register_attribute("zipcode", AttributeKind::ExactMatch);
-    schema.register_attribute("city", AttributeKind::ExactMatch);
-    schema.register_attribute("pet", AttributeKind::ExactMatch);
-    let mut engine = SearchEngine::new(&schema);
-    engine.insert(0, "name", "Alice").unwrap();
-    engine.insert(0, "zipcode", "12345").unwrap();
-    engine.insert(0, "city", "New York").unwrap();
-    engine.insert(1, "name", "Bob").unwrap();
-    engine.insert(1, "zipcode", "12345").unwrap();
-    engine.insert(1, "city", "New York").unwrap();
-    engine.insert(1, "pet", "Cat").unwrap();
-    engine.insert(1, "pet", "Dog").unwrap();
-    engine.insert(1, "pet", "Bees").unwrap();
-    engine.insert(2, "name", "Eve").unwrap();
-    engine.insert(2, "zipcode", "12345").unwrap();
-    engine.insert(2, "city", "New York").unwrap();
-    engine.insert(2, "zipcode", "54321").unwrap();
-    engine.insert(2, "pet", "Cat").unwrap();
-    engine.insert(2, "city", "Berlin").unwrap();
-    engine.insert(3, "name", "Victor").unwrap();
-    engine.insert(3, "city", "Prag").unwrap();
-    engine.insert(3, "pet", "Dog").unwrap();
-    engine.insert(4, "name", "Hans").unwrap();
-    engine.insert(4, "city", "New York").unwrap();
-    engine.insert(4, "zipcode", "12345").unwrap();
-    engine.insert(4, "pet", "Dog").unwrap();
-    engine.insert(5, "name", "Peter").unwrap();
-    engine.insert(5, "city", "New York").unwrap();
-    engine.insert(5, "zipcode", "12345").unwrap();
-    engine.insert(5, "pet", "Dog").unwrap();
-    engine.insert(5, "pet", "Cat").unwrap();
+    let mut engine = SearchEngine::new(&AttributeSchema::new());
+
+    let mut index_name = SearchIndexExact::<_, String>::new();
+    let mut index_zipcode = SearchIndexExact::<_, String>::new();
+    let mut index_city = SearchIndexExact::<_, String>::new();
+    let mut index_pet = SearchIndexExact::<_, String>::new();
+
+    index_name.insert(0, "Alice".into());
+    index_zipcode.insert(0, "12345".into());
+    index_city.insert(0, "New York".into());
+    index_name.insert(1, "Bob".into());
+    index_zipcode.insert(1, "12345".into());
+    index_city.insert(1, "New York".into());
+    index_pet.insert(1, "Cat".into());
+    index_pet.insert(1, "Dog".into());
+    index_pet.insert(1, "Bees".into());
+    index_name.insert(2, "Eve".into());
+    index_zipcode.insert(2, "12345".into());
+    index_city.insert(2, "New York".into());
+    index_zipcode.insert(2, "54321".into());
+    index_pet.insert(2, "Cat".into());
+    index_city.insert(2, "Berlin".into());
+    index_name.insert(3, "Victor".into());
+    index_city.insert(3, "Prag".into());
+    index_pet.insert(3, "Dog".into());
+    index_name.insert(4, "Hans".into());
+    index_city.insert(4, "New York".into());
+    index_zipcode.insert(4, "12345".into());
+    index_pet.insert(4, "Dog".into());
+    index_name.insert(5, "Peter".into());
+    index_city.insert(5, "New York".into());
+    index_zipcode.insert(5, "12345".into());
+    index_pet.insert(5, "Dog".into());
+    index_pet.insert(5, "Cat".into());
+
+    engine.add_index("name", index_name);
+    engine.add_index("zipcode", index_zipcode);
+    engine.add_index("city", index_city);
+    engine.add_index("pet", index_pet);
 
     let q = Query::Exact("zipcode".into(), "12345".into());
     let result = engine.search(&q).expect("no errors during search");

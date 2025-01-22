@@ -7,4 +7,5 @@ mod query;
 pub use attributes::*;
 pub use engine::*;
 pub use error::*;
+pub use index::*;
 pub use query::*;
