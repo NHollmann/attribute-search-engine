@@ -11,8 +11,8 @@ pub enum SearchEngineError {
     /// for example when inserting or by a [Query](crate::query::Query).
     UnknownArgument,
 
-    /// A [QueryValue](crate::query::QueryValue) cannot be processed by a
-    /// specific search index because their types don't match.
+    /// A [Query](crate::query::Query) value cannot be processed by a
+    /// specific search index because the string can't be converted to the expected type.
     MismatchedQueryType,
 
     /// A [Query](crate::query::Query) cannot be processed because it is

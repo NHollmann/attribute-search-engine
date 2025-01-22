@@ -1,38 +1,30 @@
 use regex::Regex;
 use std::collections::{HashMap, HashSet};
+use std::hash::Hash;
 
 use crate::attributes::*;
 use crate::error::*;
 use crate::index::*;
 use crate::query::*;
 
-pub struct SearchEngine {
-    indices: HashMap<String, Box<dyn SearchIndex<usize>>>,
+pub struct SearchEngine<P: Eq + Hash + Clone + 'static> {
+    indices: HashMap<String, Box<dyn SearchIndex<P>>>,
 }
 
-impl SearchEngine {
+impl<P: Eq + Hash + Clone + 'static> SearchEngine<P> {
     pub fn new(schema: &AttributeSchema) -> Self {
         let mut indices = HashMap::with_capacity(schema.count());
 
         for (name, t) in schema.iter() {
             match t {
                 AttributeKind::ExactMatch => {
-                    indices.insert(
-                        name.clone(),
-                        Box::new(SearchIndexExact::<usize>::new()) as _,
-                    );
+                    indices.insert(name.clone(), Box::new(SearchIndexExact::<P>::new()) as _);
                 }
                 AttributeKind::PrefixMatch => {
-                    indices.insert(
-                        name.clone(),
-                        Box::new(SearchIndexPrefix::<usize>::new()) as _,
-                    );
+                    indices.insert(name.clone(), Box::new(SearchIndexPrefix::<P>::new()) as _);
                 }
                 AttributeKind::RangeMatch => {
-                    indices.insert(
-                        name.clone(),
-                        Box::new(SearchIndexRange::<usize>::new()) as _,
-                    );
+                    indices.insert(name.clone(), Box::new(SearchIndexRange::<P>::new()) as _);
                 }
             }
         }
@@ -40,12 +32,7 @@ impl SearchEngine {
         Self { indices }
     }
 
-    pub fn insert(
-        &mut self,
-        primary_id: usize,
-        attribute: &str,
-        attribute_value: &str,
-    ) -> Result<()> {
+    pub fn insert(&mut self, primary_id: P, attribute: &str, attribute_value: &str) -> Result<()> {
         let index = self
             .indices
             .get_mut(attribute)
@@ -54,7 +41,7 @@ impl SearchEngine {
         Ok(())
     }
 
-    pub fn search(&self, query: &Query) -> Result<HashSet<usize>> {
+    pub fn search(&self, query: &Query) -> Result<HashSet<P>> {
         match query {
             Query::Exact(attr, _)
             | Query::Prefix(attr, _)
@@ -69,21 +56,21 @@ impl SearchEngine {
                 index.search(query)
             }
             Query::Or(vec) => {
-                let mut result_set = HashSet::<usize>::new();
+                let mut result_set = HashSet::<P>::new();
                 for pred in vec.iter() {
                     let attribute_set = self.search(pred)?;
-                    result_set = result_set.union(&attribute_set).copied().collect();
+                    result_set = result_set.union(&attribute_set).cloned().collect();
                 }
                 Ok(result_set)
             }
             Query::And(vec) => {
-                let mut result_set = HashSet::<usize>::new();
+                let mut result_set = HashSet::<P>::new();
                 for (i, pred) in vec.iter().enumerate() {
                     let attribute_set = self.search(pred)?;
                     if i == 0 {
                         result_set = attribute_set;
                     } else {
-                        result_set = result_set.intersection(&attribute_set).copied().collect();
+                        result_set = result_set.intersection(&attribute_set).cloned().collect();
                     }
                     if result_set.len() == 0 {
                         return Ok(result_set);
@@ -95,7 +82,7 @@ impl SearchEngine {
                 let mut result_set = self.search(base)?;
                 for pred in exclude.iter() {
                     let attribute_set = self.search(pred)?;
-                    result_set = result_set.difference(&attribute_set).copied().collect();
+                    result_set = result_set.difference(&attribute_set).cloned().collect();
                     if result_set.len() == 0 {
                         return Ok(result_set);
                     }
@@ -113,8 +100,7 @@ impl SearchEngine {
         for (_, [modifier, attribute, value]) in
             attr_re.captures_iter(query_str).map(|c| c.extract())
         {
-            let new_predicate =
-                Query::Exact(attribute.to_owned(), QueryValue::Str(value.to_owned()));
+            let new_predicate = Query::Exact(attribute.to_owned(), value.to_owned());
             if modifier == "+" {
                 include.push(new_predicate);
             } else {

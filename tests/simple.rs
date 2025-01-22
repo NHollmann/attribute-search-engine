@@ -1,6 +1,6 @@
 use std::collections::HashSet;
 
-use attribute_search_engine::{AttributeKind, AttributeSchema, Query, QueryValue, SearchEngine};
+use attribute_search_engine::{AttributeKind, AttributeSchema, Query, SearchEngine};
 
 #[test]
 fn basic_example() {
@@ -38,28 +38,28 @@ fn basic_example() {
     engine.insert(5, "pet", "Dog").unwrap();
     engine.insert(5, "pet", "Cat").unwrap();
 
-    let q = Query::Exact("zipcode".into(), QueryValue::Str("12345".into()));
+    let q = Query::Exact("zipcode".into(), "12345".into());
     let result = engine.search(&q).expect("no errors during search");
     assert_eq!(result, HashSet::from_iter(vec![0, 1, 2, 4, 5]));
 
     let q = Query::Exclude(
         Query::And(vec![
-            Query::Exact("zipcode".into(), QueryValue::Str("12345".into())),
-            Query::Exact("pet".into(), QueryValue::Str("Dog".into())),
+            Query::Exact("zipcode".into(), "12345".into()),
+            Query::Exact("pet".into(), "Dog".into()),
         ])
         .into(),
-        vec![Query::Exact("name".into(), QueryValue::Str("Hans".into()))],
+        vec![Query::Exact("name".into(), "Hans".into())],
     );
     let result = engine.search(&q).expect("no errors during search");
     assert_eq!(result, HashSet::from_iter(vec![1, 5]));
 
     let q = Query::Exclude(
         Query::Or(vec![
-            Query::Exact("zipcode".into(), QueryValue::Str("12345".into())),
-            Query::Exact("pet".into(), QueryValue::Str("Dog".into())),
+            Query::Exact("zipcode".into(), "12345".into()),
+            Query::Exact("pet".into(), "Dog".into()),
         ])
         .into(),
-        vec![Query::Exact("name".into(), QueryValue::Str("Hans".into()))],
+        vec![Query::Exact("name".into(), "Hans".into())],
     );
     let result = engine.search(&q).expect("no errors during search");
     assert_eq!(result, HashSet::from_iter(vec![0, 1, 2, 3, 5]));

@@ -1,5 +1,5 @@
 use super::SearchIndex;
-use crate::{Query, QueryValue, Result, SearchEngineError};
+use crate::{Query, Result, SearchEngineError};
 use std::{
     collections::{BTreeMap, HashSet},
     hash::Hash,
@@ -27,12 +27,12 @@ impl<P: Eq + Hash + Clone> SearchIndex<P> for SearchIndexRange<P> {
 
     fn search(&self, query: &Query) -> Result<HashSet<P>> {
         match query {
-            Query::Exact(_, QueryValue::Str(value)) => Ok(self
+            Query::Exact(_, value) => Ok(self
                 .index
                 .get(value)
                 .cloned()
                 .unwrap_or(HashSet::<P>::new())),
-            Query::Exact(_, _) => Err(SearchEngineError::MismatchedQueryType),
+            // Query::Exact(_, _) => Err(SearchEngineError::MismatchedQueryType), TODO
             _ => Err(SearchEngineError::UnsupportedQuery),
         }
     }
