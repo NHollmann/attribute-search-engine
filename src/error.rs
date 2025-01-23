@@ -5,7 +5,7 @@ pub type Result<T> = result::Result<T, SearchEngineError>;
 
 /// Enum of all possible error types that the attribute search engine
 /// can throw by itself.
-#[derive(Debug)]
+#[derive(Debug, PartialEq)]
 pub enum SearchEngineError {
     /// Will be thrown if an unknown attribute is requested,
     /// for example when inserting or by a [Query](crate::query::Query).
