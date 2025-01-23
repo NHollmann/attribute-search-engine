@@ -1,4 +1,4 @@
-use super::{query_string_to_type, SearchIndex, SearchIndexBuilder};
+use super::{query_string_to_type, SearchIndex};
 use crate::{Query, Result, SearchEngineError};
 use std::{
     collections::{BTreeMap, HashSet},
@@ -7,12 +7,16 @@ use std::{
     str::FromStr,
 };
 
-pub struct SearchIndexRange<P, V> {
+pub struct SearchIndexBTreeRange<P, V> {
     index: BTreeMap<V, HashSet<P>>,
 }
 
-impl<P: Eq + Hash + Clone, V: Ord> SearchIndexRange<P, V> {
-    /// Create a new SearchIndexRange.
+impl<P, V> SearchIndexBTreeRange<P, V>
+where
+    P: Eq + Hash + Clone + 'static,
+    V: Ord + FromStr + 'static,
+{
+    /// Create a new SearchIndexBTreeRange.
     pub fn new() -> Self {
         Self {
             index: BTreeMap::new(),
@@ -26,29 +30,19 @@ impl<P: Eq + Hash + Clone, V: Ord> SearchIndexRange<P, V> {
         }
         result_set
     }
-}
 
-impl<P, V> SearchIndexBuilder<P, V> for SearchIndexRange<P, V>
-where
-    P: Eq + Hash + Clone + 'static,
-    V: Ord + FromStr + 'static,
-{
-    fn insert(&mut self, primary_id: P, attribute_value: V) {
+    pub fn insert(&mut self, primary_id: P, attribute_value: V) {
         self.index
             .entry(attribute_value)
             .or_default()
             .insert(primary_id);
     }
-
-    fn build(self) -> Box<dyn SearchIndex<P>> {
-        Box::new(self)
-    }
 }
 
-impl<P, V> SearchIndex<P> for SearchIndexRange<P, V>
+impl<P, V> SearchIndex<P> for SearchIndexBTreeRange<P, V>
 where
-    P: Eq + Hash + Clone,
-    V: Ord + FromStr,
+    P: Eq + Hash + Clone + 'static,
+    V: Ord + FromStr + 'static,
 {
     fn search(&self, query: &Query) -> Result<HashSet<P>> {
         match query {

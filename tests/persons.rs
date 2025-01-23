@@ -1,7 +1,7 @@
 use std::collections::HashSet;
 
 use attribute_search_engine::{
-    Query, SearchEngine, SearchIndexBuilder, SearchIndexExact, SearchIndexRange,
+    Query, SearchEngine, SearchIndexHashMap, SearchIndexBTreeRange
 };
 
 #[test]
@@ -91,11 +91,11 @@ fn query_parser() {
 }
 
 fn create_person_search_engine() -> SearchEngine<u8> {
-    let mut index_name = SearchIndexExact::<_, String>::new();
-    let mut index_zipcode = SearchIndexExact::<_, String>::new();
-    let mut index_city = SearchIndexExact::<_, String>::new();
-    let mut index_pet = SearchIndexExact::<_, String>::new();
-    let mut index_age = SearchIndexRange::<_, u8>::new();
+    let mut index_name = SearchIndexHashMap::<_, String>::new();
+    let mut index_zipcode = SearchIndexHashMap::<_, String>::new();
+    let mut index_city = SearchIndexHashMap::<_, String>::new();
+    let mut index_pet = SearchIndexHashMap::<_, String>::new();
+    let mut index_age = SearchIndexBTreeRange::<_, u8>::new();
 
     index_name.insert(0, "Alice".into());
     index_zipcode.insert(0, "12345".into());

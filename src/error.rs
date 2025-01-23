@@ -7,9 +7,9 @@ pub type Result<T> = result::Result<T, SearchEngineError>;
 /// can throw by itself.
 #[derive(Debug)]
 pub enum SearchEngineError {
-    /// Will be thrown if an unknown argument is requested,
+    /// Will be thrown if an unknown attribute is requested,
     /// for example when inserting or by a [Query](crate::query::Query).
-    UnknownArgument,
+    UnknownAttribute,
 
     /// A [Query](crate::query::Query) value cannot be processed by a
     /// specific search index because the string can't be converted to the expected type.
@@ -25,7 +25,7 @@ impl std::error::Error for SearchEngineError {}
 impl fmt::Display for SearchEngineError {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         match self {
-            SearchEngineError::UnknownArgument => write!(f, "Unknown argument error"),
+            SearchEngineError::UnknownAttribute => write!(f, "Unknown attribute error"),
             SearchEngineError::MismatchedQueryType => write!(f, "Mismatched query type"),
             SearchEngineError::UnsupportedQuery => write!(f, "Unsupported query"),
         }

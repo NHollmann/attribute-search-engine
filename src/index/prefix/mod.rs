@@ -16,15 +16,16 @@ impl<P: Eq + Hash + Clone> SearchIndexPrefix<P> {
             index: None,
         }
     }
-}
 
-impl<P: Eq + Hash + Clone> SearchIndex<P> for SearchIndexPrefix<P> {
-    fn insert(&mut self, primary_id: P, attribute_value: String) {
+    pub fn insert(&mut self, primary_id: P, attribute_value: String) {
         let mut hs = HashSet::new();
         hs.insert(primary_id);
         self.builder.push(attribute_value, hs);
     }
 
+}
+
+impl<P: Eq + Hash + Clone> SearchIndex<P> for SearchIndexPrefix<P> {
     fn search(&self, query: &Query) -> Result<HashSet<P>> {
         match query {
             Query::Exact(_, value) => {

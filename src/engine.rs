@@ -17,8 +17,8 @@ impl<P: Eq + Hash + Clone> SearchEngine<P> {
         }
     }
 
-    pub fn add_index<V>(&mut self, name: &str, index_builder: impl SearchIndexBuilder<P, V>) {
-        self.indices.insert(name.into(), index_builder.build());
+    pub fn add_index<T: SearchIndex<P> + 'static>(&mut self, name: &str, index_builder: T) {
+        self.indices.insert(name.into(), Box::new(index_builder));
     }
 
     pub fn search(&self, query: &Query) -> Result<HashSet<P>> {
@@ -32,7 +32,7 @@ impl<P: Eq + Hash + Clone> SearchEngine<P> {
                 let index = self
                     .indices
                     .get(attr)
-                    .ok_or(SearchEngineError::UnknownArgument)?;
+                    .ok_or(SearchEngineError::UnknownAttribute)?;
                 index.search(query)
             }
             Query::Or(vec) => {
