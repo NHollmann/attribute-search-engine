@@ -1,4 +1,4 @@
-use super::{query_string_to_type, SearchIndex};
+use super::{string_to_payload_type, SearchIndex};
 use crate::{Query, Result, SearchEngineError};
 use std::{
     collections::{HashMap, HashSet},
@@ -31,7 +31,15 @@ where
     P: Eq + Hash + Clone + 'static,
     V: Eq + Hash + FromStr + 'static,
 {
-    /// Create a new SearchIndexHashMap.
+    /// Creates a new `SearchIndexHashMap`
+    ///
+    /// # Example
+    ///
+    /// ```rust
+    /// use attribute_search_engine::SearchIndexHashMap;
+    ///
+    /// let index = SearchIndexHashMap::<usize, String>::new();
+    /// ```
     pub fn new() -> Self {
         Self {
             index: HashMap::new(),
@@ -48,15 +56,16 @@ where
 
 impl<P: Clone, V: Eq + Hash + FromStr> SearchIndex<P> for SearchIndexHashMap<P, V> {
     fn search(&self, query: &Query) -> Result<HashSet<P>> {
-        let value_str = match query {
-            Query::Exact(_, value) => Ok(value),
+        match query {
+            Query::Exact(_, value_str) => {
+                let value: V = string_to_payload_type(value_str)?;
+                Ok(self
+                    .index
+                    .get(&value)
+                    .cloned()
+                    .unwrap_or(HashSet::<P>::new()))
+            }
             _ => Err(SearchEngineError::UnsupportedQuery),
-        }?;
-        let value: V = query_string_to_type(value_str)?;
-        Ok(self
-            .index
-            .get(&value)
-            .cloned()
-            .unwrap_or(HashSet::<P>::new()))
+        }
     }
 }

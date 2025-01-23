@@ -1,4 +1,4 @@
-use super::{query_string_to_type, SearchIndex};
+use super::{string_to_payload_type, SearchIndex};
 use crate::{Query, Result, SearchEngineError};
 use std::{
     collections::{BTreeMap, HashSet},
@@ -47,7 +47,7 @@ where
     fn search(&self, query: &Query) -> Result<HashSet<P>> {
         match query {
             Query::Exact(_, value_str) => {
-                let value: V = query_string_to_type(value_str)?;
+                let value: V = string_to_payload_type(value_str)?;
                 Ok(self
                     .index
                     .get(&value)
@@ -55,21 +55,21 @@ where
                     .unwrap_or(HashSet::<P>::new()))
             }
             Query::InRange(_, min_str, max_str) => {
-                let min: V = query_string_to_type(min_str)?;
-                let max: V = query_string_to_type(max_str)?;
+                let min: V = string_to_payload_type(min_str)?;
+                let max: V = string_to_payload_type(max_str)?;
                 Ok(self.search_range(min..=max))
             }
             Query::Minimum(_, min_str) => {
-                let min: V = query_string_to_type(min_str)?;
+                let min: V = string_to_payload_type(min_str)?;
                 Ok(self.search_range(min..))
             }
             Query::Maximum(_, max_str) => {
-                let max: V = query_string_to_type(max_str)?;
+                let max: V = string_to_payload_type(max_str)?;
                 Ok(self.search_range(..=max))
             }
             Query::OutRange(_, start_str, end_str) => {
-                let start: V = query_string_to_type(start_str)?;
-                let end: V = query_string_to_type(end_str)?;
+                let start: V = string_to_payload_type(start_str)?;
+                let end: V = string_to_payload_type(end_str)?;
                 Ok(self
                     .search_range(..start)
                     .union(&self.search_range((Bound::Excluded(end), Bound::Unbounded)))

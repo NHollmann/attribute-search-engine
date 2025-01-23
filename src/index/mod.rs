@@ -13,7 +13,7 @@ pub trait SearchIndex<P> {
     fn search(&self, query: &Query) -> Result<HashSet<P>>;
 }
 
-fn query_string_to_type<T: FromStr>(value: &str) -> Result<T> {
+fn string_to_payload_type<T: FromStr>(value: &str) -> Result<T> {
     value
         .parse()
         .map_err(|_| SearchEngineError::MismatchedQueryType)

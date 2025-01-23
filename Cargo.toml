@@ -13,7 +13,6 @@ publish = ["crates-io"]
 
 [dependencies]
 regex = "1.11.1"
-trie-rs = "=0.4.2"
 
 [dev-dependencies]
 criterion = { version = "0.5", features = ["html_reports"] }
