@@ -26,7 +26,9 @@ impl<P: Eq + Hash + Clone> SearchIndex<P> for SearchIndexPrefixTree<P> {
     fn search(&self, query: &Query) -> Result<HashSet<P>> {
         match query {
             Query::Exact(_, value) => Ok(self.index.get(value).unwrap_or(HashSet::<P>::new())),
-            Query::Prefix(_, _value) => todo!(),
+            Query::Prefix(_, value) => {
+                Ok(self.index.get_prefix(value).unwrap_or(HashSet::<P>::new()))
+            }
             _ => Err(SearchEngineError::UnsupportedQuery),
         }
     }

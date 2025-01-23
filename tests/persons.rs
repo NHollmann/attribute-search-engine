@@ -61,6 +61,22 @@ fn query_prefix_tree_index() {
     let q = Query::Exact("permission".into(), "personel.read".into());
     let result = engine.search(&q).expect("no errors during search");
     assert_eq!(result, HashSet::from_iter(vec![0, 1, 2]));
+
+    let q = Query::Prefix("permission".into(), "finances".into());
+    let result = engine.search(&q).expect("no errors during search");
+    assert_eq!(result, HashSet::from_iter(vec![0, 1, 4, 5]));
+
+    let q = Query::Prefix("permission".into(), "".into());
+    let result = engine.search(&q).expect("no errors during search");
+    assert_eq!(result, HashSet::from_iter(vec![0, 1, 2, 3, 4, 5]));
+
+    let q = Query::Prefix("permission".into(), "personel.read".into());
+    let result = engine.search(&q).expect("no errors during search");
+    assert_eq!(result, HashSet::from_iter(vec![0, 1, 2]));
+
+    let q = Query::Prefix("permission".into(), "personel.unknown".into());
+    let result = engine.search(&q).expect("no errors during search");
+    assert_eq!(result, HashSet::from_iter(vec![]));
 }
 
 #[test]

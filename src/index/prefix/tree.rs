@@ -1,6 +1,6 @@
 use std::clone::Clone;
 use std::cmp::Ord;
-use std::collections::HashSet;
+use std::collections::{HashSet, VecDeque};
 use std::hash::Hash;
 
 /// Prefix tree object that is specialized in storing HashSets and accessing them by strings.
@@ -58,11 +58,30 @@ impl<P: Eq + Hash + Clone> HashSetPrefixTree<P> {
         self.nodes[node_id].set(value_id);
     }
 
-    /// Get a HashSet from the tree.
+    /// Get a HashSet from the tree by exactly matching the key.
     pub fn get(&self, key: &str) -> Option<HashSet<P>> {
         let node_id = self.find_node(key)?;
         let value_id = self.nodes[node_id].get()?;
         Some(self.values[value_id].clone())
+    }
+
+    /// Get a HashSet from the tree by finding all entries that share the same prefix.
+    pub fn get_prefix(&self, prefix: &str) -> Option<HashSet<P>> {
+        let mut node_ids = VecDeque::new();
+        let mut result_set = HashSet::<P>::new();
+
+        let node_id = self.find_node(prefix)?;
+        node_ids.push_back(node_id);
+
+        while let Some(node_id) = node_ids.pop_front() {
+            if let Some(value_id) = self.nodes[node_id].get() {
+                result_set = result_set.union(&self.values[value_id]).cloned().collect();
+            }
+
+            node_ids.extend(self.nodes[node_id].children.iter().map(|x| x.1));
+        }
+
+        Some(result_set)
     }
 
     /// Find a `TreeNode` in the tree by its key.
