@@ -22,7 +22,6 @@ impl<P: Eq + Hash + Clone> SearchIndexPrefix<P> {
         hs.insert(primary_id);
         self.builder.push(attribute_value, hs);
     }
-
 }
 
 impl<P: Eq + Hash + Clone> SearchIndex<P> for SearchIndexPrefix<P> {

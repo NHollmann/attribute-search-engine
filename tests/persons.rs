@@ -1,8 +1,6 @@
 use std::collections::HashSet;
 
-use attribute_search_engine::{
-    Query, SearchEngine, SearchIndexHashMap, SearchIndexBTreeRange
-};
+use attribute_search_engine::{Query, SearchEngine, SearchIndexBTreeRange, SearchIndexHashMap};
 
 #[test]
 fn query_range_index() {
@@ -71,8 +69,6 @@ fn query_advanced() {
     );
     let result = engine.search(&q).expect("no errors during search");
     assert_eq!(result, HashSet::from_iter(vec![0, 1, 2, 3, 5]));
-
-    
 }
 
 #[test]

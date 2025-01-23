@@ -26,7 +26,7 @@ pub struct SearchIndexHashMap<P, V> {
     index: HashMap<V, HashSet<P>>,
 }
 
-impl<P, V> SearchIndexHashMap<P, V> 
+impl<P, V> SearchIndexHashMap<P, V>
 where
     P: Eq + Hash + Clone + 'static,
     V: Eq + Hash + FromStr + 'static,
