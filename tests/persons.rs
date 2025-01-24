@@ -9,24 +9,19 @@ fn query_btree_range_index() {
     let engine = create_person_search_engine();
 
     let q = Query::Exact("age".into(), "27".into());
-    let result = engine.search(&q).expect("no errors during search");
-    assert_eq!(result, HashSet::from_iter(vec![0, 1,]));
+    assert_eq!(engine.search(&q), Ok(HashSet::from_iter(vec![0, 1,])));
 
     let q = Query::InRange("age".into(), "24".into(), "34".into());
-    let result = engine.search(&q).expect("no errors during search");
-    assert_eq!(result, HashSet::from_iter(vec![0, 1, 3, 4]));
+    assert_eq!(engine.search(&q), Ok(HashSet::from_iter(vec![0, 1, 3, 4])));
 
     let q = Query::OutRange("age".into(), "25".into(), "34".into());
-    let result = engine.search(&q).expect("no errors during search");
-    assert_eq!(result, HashSet::from_iter(vec![2, 5]));
+    assert_eq!(engine.search(&q), Ok(HashSet::from_iter(vec![2, 5])));
 
     let q = Query::Minimum("age".into(), "27".into());
-    let result = engine.search(&q).expect("no errors during search");
-    assert_eq!(result, HashSet::from_iter(vec![0, 1, 4, 5]));
+    assert_eq!(engine.search(&q), Ok(HashSet::from_iter(vec![0, 1, 4, 5])));
 
     let q = Query::Maximum("age".into(), "27".into());
-    let result = engine.search(&q).expect("no errors during search");
-    assert_eq!(result, HashSet::from_iter(vec![0, 1, 2, 3]));
+    assert_eq!(engine.search(&q), Ok(HashSet::from_iter(vec![0, 1, 2, 3])));
 }
 
 #[test]
@@ -34,16 +29,16 @@ fn query_hashmap_index() {
     let engine = create_person_search_engine();
 
     let q = Query::Exact("name".into(), "Bob".into());
-    let result = engine.search(&q).expect("no errors during search");
-    assert_eq!(result, HashSet::from_iter(vec![1]));
+    assert_eq!(engine.search(&q), Ok(HashSet::from_iter(vec![1])));
 
     let q = Query::Exact("zipcode".into(), "12345".into());
-    let result = engine.search(&q).expect("no errors during search");
-    assert_eq!(result, HashSet::from_iter(vec![0, 1, 2, 4, 5]));
+    assert_eq!(
+        engine.search(&q),
+        Ok(HashSet::from_iter(vec![0, 1, 2, 4, 5]))
+    );
 
     let q = Query::Exact("city".into(), "Frankfurt".into());
-    let result = engine.search(&q).expect("no errors during search");
-    assert_eq!(result, HashSet::from_iter(vec![]));
+    assert_eq!(engine.search(&q), Ok(HashSet::from_iter(vec![])));
 }
 
 #[test]
@@ -51,32 +46,31 @@ fn query_prefix_tree_index() {
     let engine = create_person_search_engine();
 
     let q = Query::Exact("permission".into(), "dashboard.show".into());
-    let result = engine.search(&q).expect("no errors during search");
-    assert_eq!(result, HashSet::from_iter(vec![0, 1, 2, 3, 4, 5]));
+    assert_eq!(
+        engine.search(&q),
+        Ok(HashSet::from_iter(vec![0, 1, 2, 3, 4, 5]))
+    );
 
     let q = Query::Exact("permission".into(), "finances".into());
-    let result = engine.search(&q).expect("no errors during search");
-    assert_eq!(result, HashSet::from_iter(vec![]));
+    assert_eq!(engine.search(&q), Ok(HashSet::from_iter(vec![])));
 
     let q = Query::Exact("permission".into(), "personel.read".into());
-    let result = engine.search(&q).expect("no errors during search");
-    assert_eq!(result, HashSet::from_iter(vec![0, 1, 2]));
+    assert_eq!(engine.search(&q), Ok(HashSet::from_iter(vec![0, 1, 2])));
 
     let q = Query::Prefix("permission".into(), "finances".into());
-    let result = engine.search(&q).expect("no errors during search");
-    assert_eq!(result, HashSet::from_iter(vec![0, 1, 4, 5]));
+    assert_eq!(engine.search(&q), Ok(HashSet::from_iter(vec![0, 1, 4, 5])));
 
     let q = Query::Prefix("permission".into(), "".into());
-    let result = engine.search(&q).expect("no errors during search");
-    assert_eq!(result, HashSet::from_iter(vec![0, 1, 2, 3, 4, 5]));
+    assert_eq!(
+        engine.search(&q),
+        Ok(HashSet::from_iter(vec![0, 1, 2, 3, 4, 5]))
+    );
 
     let q = Query::Prefix("permission".into(), "personel.read".into());
-    let result = engine.search(&q).expect("no errors during search");
-    assert_eq!(result, HashSet::from_iter(vec![0, 1, 2]));
+    assert_eq!(engine.search(&q), Ok(HashSet::from_iter(vec![0, 1, 2])));
 
     let q = Query::Prefix("permission".into(), "personel.unknown".into());
-    let result = engine.search(&q).expect("no errors during search");
-    assert_eq!(result, HashSet::from_iter(vec![]));
+    assert_eq!(engine.search(&q), Ok(HashSet::from_iter(vec![])));
 }
 
 #[test]
@@ -91,8 +85,7 @@ fn query_advanced() {
         .into(),
         vec![Query::Exact("name".into(), "Hans".into())],
     );
-    let result = engine.search(&q).expect("no errors during search");
-    assert_eq!(result, HashSet::from_iter(vec![1, 5]));
+    assert_eq!(engine.search(&q), Ok(HashSet::from_iter(vec![1, 5])));
 
     let q = Query::Exclude(
         Query::Or(vec![
@@ -102,8 +95,10 @@ fn query_advanced() {
         .into(),
         vec![Query::Exact("name".into(), "Hans".into())],
     );
-    let result = engine.search(&q).expect("no errors during search");
-    assert_eq!(result, HashSet::from_iter(vec![0, 1, 2, 3, 5]));
+    assert_eq!(
+        engine.search(&q),
+        Ok(HashSet::from_iter(vec![0, 1, 2, 3, 5]))
+    );
 }
 
 #[test]
@@ -113,12 +108,10 @@ fn query_parser() {
     let q = engine
         .query_from_str("+zipcode:12345 +pet:Dog -name:Hans")
         .expect("valid query");
-    let result = engine.search(&q).expect("no errors during search");
-    assert_eq!(result, HashSet::from_iter(vec![1, 5]));
+    assert_eq!(engine.search(&q), Ok(HashSet::from_iter(vec![1, 5])));
 
     let q = engine.query_from_str("+age:27").expect("valid query");
-    let result = engine.search(&q).expect("no errors during search");
-    assert_eq!(result, HashSet::from_iter(vec![0, 1]));
+    assert_eq!(engine.search(&q), Ok(HashSet::from_iter(vec![0, 1])));
 }
 
 fn create_person_search_engine() -> SearchEngine<u8> {

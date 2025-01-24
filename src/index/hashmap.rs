@@ -6,7 +6,7 @@ use std::{
     str::FromStr,
 };
 
-/// SearchIndexHashMap is a index baked by a HashMap that can only match exact attribute values.
+/// SearchIndexHashMap is a index backed by a HashMap that can only match exact attribute values.
 ///
 /// # Example
 /// ```
@@ -31,10 +31,9 @@ where
     P: Eq + Hash + Clone + 'static,
     V: Eq + Hash + FromStr + 'static,
 {
-    /// Creates a new `SearchIndexHashMap`
+    /// Creates a new `SearchIndexHashMap`.
     ///
     /// # Example
-    ///
     /// ```rust
     /// use attribute_search_engine::SearchIndexHashMap;
     ///
@@ -46,6 +45,21 @@ where
         }
     }
 
+    /// Insert a new entry in the index.
+    ///
+    /// # Example
+    /// ```rust
+    /// use attribute_search_engine::SearchIndexHashMap;
+    ///
+    /// let mut index = SearchIndexHashMap::<usize, String>::new();
+    ///
+    /// // You insert an entry by giving a row / primary id and an attribute value:
+    /// index.insert(123, "A".into());
+    /// // The same row / primary id can have multiple attributes assigned:
+    /// index.insert(123, "B".into());
+    /// // Add as much entries as you want for as many rows you want:
+    /// index.insert(124, "C".into());
+    /// ```
     pub fn insert(&mut self, primary_id: P, attribute_value: V) {
         self.index
             .entry(attribute_value)
@@ -125,10 +139,44 @@ mod tests {
         let mut index = SearchIndexHashMap::<usize, i32>::new();
         index.insert(0, 0);
 
-        let result = index.search(&&Query::Prefix("<not used>".into(), "0".into()));
-        assert_eq!(result, Err(SearchEngineError::UnsupportedQuery));
-
-        // TODO More Queries
-        // TODO Fix persons-test to not use expect
+        assert_eq!(
+            index.search(&Query::Prefix("<not used>".into(), "0".into())),
+            Err(SearchEngineError::UnsupportedQuery)
+        );
+        assert_eq!(
+            index.search(&Query::InRange("<not used>".into(), "0".into(), "1".into())),
+            Err(SearchEngineError::UnsupportedQuery)
+        );
+        assert_eq!(
+            index.search(&Query::OutRange(
+                "<not used>".into(),
+                "0".into(),
+                "1".into()
+            )),
+            Err(SearchEngineError::UnsupportedQuery)
+        );
+        assert_eq!(
+            index.search(&Query::Minimum("<not used>".into(), "0".into())),
+            Err(SearchEngineError::UnsupportedQuery)
+        );
+        assert_eq!(
+            index.search(&Query::Maximum("<not used>".into(), "0".into())),
+            Err(SearchEngineError::UnsupportedQuery)
+        );
+        assert_eq!(
+            index.search(&Query::Or(vec![])),
+            Err(SearchEngineError::UnsupportedQuery)
+        );
+        assert_eq!(
+            index.search(&Query::And(vec![])),
+            Err(SearchEngineError::UnsupportedQuery)
+        );
+        assert_eq!(
+            index.search(&Query::Exclude(
+                Box::new(Query::Exact("<not used>".into(), "0".into())),
+                vec![]
+            )),
+            Err(SearchEngineError::UnsupportedQuery)
+        );
     }
 }
