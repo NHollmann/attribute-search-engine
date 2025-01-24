@@ -10,6 +10,12 @@ pub struct SearchIndexPrefixTree<P> {
     index: HashSetPrefixTree<P>,
 }
 
+impl<P: Eq + Hash + Clone> Default for SearchIndexPrefixTree<P> {
+    fn default() -> Self {
+        Self::new()
+    }
+}
+
 impl<P: Eq + Hash + Clone> SearchIndexPrefixTree<P> {
     pub fn new() -> Self {
         Self {
@@ -25,9 +31,9 @@ impl<P: Eq + Hash + Clone> SearchIndexPrefixTree<P> {
 impl<P: Eq + Hash + Clone> SearchIndex<P> for SearchIndexPrefixTree<P> {
     fn search(&self, query: &Query) -> Result<HashSet<P>> {
         match query {
-            Query::Exact(_, value) => Ok(self.index.get(value).unwrap_or(HashSet::<P>::new())),
+            Query::Exact(_, value) => Ok(self.index.get(value).unwrap_or_default()),
             Query::Prefix(_, value) => {
-                Ok(self.index.get_prefix(value).unwrap_or(HashSet::<P>::new()))
+                Ok(self.index.get_prefix(value).unwrap_or_default())
             }
             _ => Err(SearchEngineError::UnsupportedQuery),
         }

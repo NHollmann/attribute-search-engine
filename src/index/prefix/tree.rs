@@ -15,10 +15,8 @@ pub struct HashSetPrefixTree<P> {
 impl<P: Eq + Hash + Clone> HashSetPrefixTree<P> {
     /// Creates a new `HashSetPrefixTree` object
     pub fn new() -> HashSetPrefixTree<P> {
-        let mut nodes = Vec::<TreeNode>::new();
         // Initialize the root node
-        nodes.push(TreeNode::new(None));
-
+        let nodes = vec![TreeNode::new(None)];
         HashSetPrefixTree {
             nodes,
             values: Vec::<HashSet<P>>::new(),

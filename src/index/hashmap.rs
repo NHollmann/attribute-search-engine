@@ -19,11 +19,21 @@ use std::{
 /// index_city.insert(1, "New York".into());
 /// index_city.insert(2, "Madrid".into());
 ///
-/// let result = index_city.search(&Query::Exact("<not used>".into(), "New York".into())).unwrap();
+/// let result = index_city.search(&Query::Exact("<unused>".into(), "New York".into())).unwrap();
 /// assert_eq!(result, HashSet::from_iter(vec![1]));
 /// ```
 pub struct SearchIndexHashMap<P, V> {
     index: HashMap<V, HashSet<P>>,
+}
+
+impl<P, V> Default for SearchIndexHashMap<P, V>
+where
+    P: Eq + Hash + Clone + 'static,
+    V: Eq + Hash + FromStr + 'static,
+ {
+    fn default() -> Self {
+        Self::new()
+    }
 }
 
 impl<P, V> SearchIndexHashMap<P, V>

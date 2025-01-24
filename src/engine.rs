@@ -10,6 +10,12 @@ pub struct SearchEngine<P> {
     indices: HashMap<String, Box<dyn SearchIndex<P>>>,
 }
 
+impl<P: Eq + Hash + Clone> Default for SearchEngine<P> {
+    fn default() -> Self {
+        Self::new()
+    }
+}
+
 impl<P: Eq + Hash + Clone> SearchEngine<P> {
     pub fn new() -> Self {
         Self {
@@ -52,7 +58,7 @@ impl<P: Eq + Hash + Clone> SearchEngine<P> {
                     } else {
                         result_set = result_set.intersection(&attribute_set).cloned().collect();
                     }
-                    if result_set.len() == 0 {
+                    if result_set.is_empty() {
                         return Ok(result_set);
                     }
                 }
@@ -63,7 +69,7 @@ impl<P: Eq + Hash + Clone> SearchEngine<P> {
                 for pred in exclude.iter() {
                     let attribute_set = self.search(pred)?;
                     result_set = result_set.difference(&attribute_set).cloned().collect();
-                    if result_set.len() == 0 {
+                    if result_set.is_empty() {
                         return Ok(result_set);
                     }
                 }
@@ -89,7 +95,7 @@ impl<P: Eq + Hash + Clone> SearchEngine<P> {
         }
 
         let base_query = Query::And(include);
-        if exclude.len() > 0 {
+        if !exclude.is_empty() {
             Ok(Query::Exclude(base_query.into(), exclude))
         } else {
             Ok(base_query)

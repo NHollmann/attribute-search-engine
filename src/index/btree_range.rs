@@ -11,6 +11,16 @@ pub struct SearchIndexBTreeRange<P, V> {
     index: BTreeMap<V, HashSet<P>>,
 }
 
+impl<P, V> Default for SearchIndexBTreeRange<P, V>
+where
+    P: Eq + Hash + Clone + 'static,
+    V: Ord + FromStr + 'static,
+ {
+    fn default() -> Self {
+        Self::new()
+    }
+}
+
 impl<P, V> SearchIndexBTreeRange<P, V>
 where
     P: Eq + Hash + Clone + 'static,
@@ -25,8 +35,8 @@ where
 
     fn search_range(&self, range: impl RangeBounds<V>) -> HashSet<P> {
         let mut result_set = HashSet::<P>::new();
-        for (_, ref primary_set) in self.index.range(range) {
-            result_set = result_set.union(&primary_set).cloned().collect();
+        for (_, primary_set) in self.index.range(range) {
+            result_set = result_set.union(primary_set).cloned().collect();
         }
         result_set
     }
