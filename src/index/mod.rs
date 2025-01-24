@@ -15,11 +15,11 @@ pub trait SearchIndex<P> {
     /// Perform a search on an index.
     ///
     /// This function returns an HashSet of all matching results.
-    /// It may not accept all enum values of [Query](crate::query::Query) but only
-    /// a small subset. If a [Query](crate::query::Query) is not supported,
+    /// It may not accept all enum values of [Query] but only
+    /// a small subset. If a [Query] is not supported,
     /// this function returns [UnsupportedQuery](crate::error::SearchEngineError::UnsupportedQuery).
     ///
-    /// If the strings in the [Query](crate::query::Query) cannot be parsed to
+    /// If the strings in the [Query] cannot be parsed to
     /// the expected payload type, this function returns
     /// [MismatchedQueryType](crate::error::SearchEngineError::MismatchedQueryType).
     fn search(&self, query: &Query) -> Result<HashSet<P>>;

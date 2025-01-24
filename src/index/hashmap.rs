@@ -6,7 +6,8 @@ use std::{
     str::FromStr,
 };
 
-/// SearchIndexHashMap is a index backed by a HashMap that can only match exact attribute values.
+/// SearchIndexHashMap is a index backed by a HashMap that can match
+/// Exact queries.
 ///
 /// # Example
 /// ```
@@ -19,8 +20,8 @@ use std::{
 /// index_city.insert(1, "New York".into());
 /// index_city.insert(2, "Madrid".into());
 ///
-/// let result = index_city.search(&Query::Exact("<unused>".into(), "New York".into())).unwrap();
-/// assert_eq!(result, HashSet::from_iter(vec![1]));
+/// let result = index_city.search(&Query::Exact("<unused>".into(), "New York".into()));
+/// assert_eq!(result, Ok(HashSet::from_iter(vec![1])));
 /// ```
 pub struct SearchIndexHashMap<P, V> {
     index: HashMap<V, HashSet<P>>,
@@ -30,7 +31,7 @@ impl<P, V> Default for SearchIndexHashMap<P, V>
 where
     P: Eq + Hash + Clone + 'static,
     V: Eq + Hash + FromStr + 'static,
- {
+{
     fn default() -> Self {
         Self::new()
     }

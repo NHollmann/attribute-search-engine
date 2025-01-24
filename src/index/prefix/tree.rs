@@ -112,6 +112,7 @@ struct TreeNode {
 }
 
 impl TreeNode {
+    /// Create a new TreeNode.
     pub fn new(value: Option<usize>) -> TreeNode {
         TreeNode {
             value,
@@ -119,6 +120,8 @@ impl TreeNode {
         }
     }
 
+    /// Find the index of a child that matches the key.
+    /// If no child is found, None is returned.
     pub fn find_child(&self, key: &char) -> Option<usize> {
         self.children
             .binary_search_by(|x| x.0.cmp(key))
@@ -126,15 +129,19 @@ impl TreeNode {
             .ok()
     }
 
+    /// Insert a new child and sort the children for faster access.
     pub fn insert_child(&mut self, key: char, child_id: usize) {
         self.children.push((key, child_id));
         self.children.sort_by(|a, b| a.0.cmp(&b.0));
     }
 
+    /// Set the value of this node.
     pub fn set(&mut self, value: usize) {
         self.value = Some(value);
     }
 
+    /// Get the current value of this node.
+    /// If no value was set before, None is returned.
     pub fn get(&self) -> Option<usize> {
         self.value
     }

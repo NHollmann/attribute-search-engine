@@ -6,6 +6,14 @@ use crate::error::*;
 use crate::index::*;
 use crate::query::*;
 
+/// A SearchEngine is a wrapper around a collection of [search indices](SearchIndex)
+/// that can process complex [queries](Query) involving multiple indices.
+///
+/// It can also create [queries](Query) from strings that are tailored to the
+/// existing [indices](SearchIndex).
+///
+/// # Example
+/// A complete example can be found on the [front page of this crate](crate).
 pub struct SearchEngine<P> {
     indices: HashMap<String, Box<dyn SearchIndex<P>>>,
 }
@@ -17,16 +25,41 @@ impl<P: Eq + Hash + Clone> Default for SearchEngine<P> {
 }
 
 impl<P: Eq + Hash + Clone> SearchEngine<P> {
+    /// Creates a new `SearchEngine`.
+    ///
+    /// # Example
+    /// ```rust
+    /// use attribute_search_engine::SearchEngine;
+    ///
+    /// let engine = SearchEngine::<usize>::new();
+    /// ```
     pub fn new() -> Self {
         Self {
             indices: HashMap::new(),
         }
     }
 
-    pub fn add_index<T: SearchIndex<P> + 'static>(&mut self, name: &str, index_builder: T) {
-        self.indices.insert(name.into(), Box::new(index_builder));
+    /// Add a new index to this search engine.
+    ///
+    /// # Example
+    /// ```rust
+    /// use attribute_search_engine::{SearchEngine, SearchIndexHashMap};
+    ///
+    /// let mut index = SearchIndexHashMap::<_, String>::new();
+    ///
+    /// // Fill index here...
+    ///
+    /// let mut engine = SearchEngine::<usize>::new();
+    /// engine.add_index("attribute", index);
+    /// ```
+    pub fn add_index<T: SearchIndex<P> + 'static>(&mut self, name: &str, index: T) {
+        self.indices.insert(name.into(), Box::new(index));
     }
 
+    /// Run a query on the search engine.
+    ///
+    /// The result is a HashSet of all row ids / primary ids
+    /// with rows that matched the query.
     pub fn search(&self, query: &Query) -> Result<HashSet<P>> {
         match query {
             Query::Exact(attr, _)
