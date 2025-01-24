@@ -1,6 +1,6 @@
 [package]
 name = "attribute-search-engine"
-version = "0.2.1"
+version = "0.3.0"
 authors = ["Nicolas Hollmann"]
 edition = "2021"
 description = "Generic search engine for rows with attributes using different matchers."
