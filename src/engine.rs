@@ -1,10 +1,10 @@
-use regex::Regex;
 use std::collections::{HashMap, HashSet};
 use std::hash::Hash;
 
 use crate::error::*;
 use crate::index::*;
 use crate::query::*;
+use crate::query_parser::*;
 
 /// A SearchEngine is a wrapper around a collection of [search indices](SearchIndex)
 /// that can process complex [queries](Query) involving multiple indices.
@@ -112,18 +112,32 @@ impl<P: Eq + Hash + Clone> SearchEngine<P> {
     }
 
     pub fn query_from_str(&self, query_str: &str) -> Result<Query> {
-        let attr_re = Regex::new(r"(\+|-)(\w+):(\S*)").expect("the regex to compile");
-
         let mut include = vec![];
         let mut exclude = vec![];
-        for (_, [modifier, attribute, value]) in
-            attr_re.captures_iter(query_str).map(|c| c.extract())
-        {
-            let new_predicate = Query::Exact(attribute.to_owned(), value.to_owned());
-            if modifier == "+" {
-                include.push(new_predicate);
-            } else {
-                exclude.push(new_predicate);
+
+        let parser = QueryParser::new(query_str);
+        for subquery in parser {
+            match subquery {
+                QueryParserResult::Attribute(is_include, attribute, values) => {
+                    let mut qs: Vec<_> = values
+                        .iter()
+                        .map(|&v| Query::Exact(attribute.to_owned(), v.to_owned()))
+                        .collect();
+                    let q;
+                    if qs.len() == 1 {
+                        q = qs.swap_remove(0);
+                    } else if qs.len() > 1 {
+                        q = Query::Or(qs);
+                    } else {
+                        continue;
+                    }
+                    if is_include {
+                        include.push(q);
+                    } else {
+                        exclude.push(q);
+                    }
+                }
+                QueryParserResult::Freetext(_) => {}
             }
         }
 

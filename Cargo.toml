@@ -11,9 +11,6 @@ license = "MIT"
 keywords = ["search-engine", "attributes"]
 publish = ["crates-io"]
 
-[dependencies]
-regex = "1.11.1"
-
 [dev-dependencies]
 criterion = { version = "0.5", features = ["html_reports"] }
 
