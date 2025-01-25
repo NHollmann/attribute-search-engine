@@ -73,7 +73,7 @@ impl<'a> QueryParser<'a> {
             self.char_it.next();
         }
         if value_start_idx <= value_end_idx {
-            if self.char_it.peek() == None {
+            if self.char_it.peek().is_none() {
                 values.push(&self.query_str[value_start_idx..=value_end_idx]);
             } else {
                 values.push(&self.query_str[value_start_idx..value_end_idx]);
@@ -92,7 +92,7 @@ impl<'a> QueryParser<'a> {
             }
             self.char_it.next();
         }
-        if self.char_it.peek() == None {
+        if self.char_it.peek().is_none() {
             QueryParserResult::Freetext(&self.query_str[start_idx..=end_idx])
         } else {
             QueryParserResult::Freetext(&self.query_str[start_idx..end_idx])

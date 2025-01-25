@@ -1,3 +1,4 @@
+use std::cmp::Ordering;
 use std::collections::{HashMap, HashSet};
 use std::hash::Hash;
 
@@ -123,14 +124,11 @@ impl<P: Eq + Hash + Clone> SearchEngine<P> {
                         .iter()
                         .map(|&v| Query::Exact(attribute.to_owned(), v.to_owned()))
                         .collect();
-                    let q;
-                    if qs.len() == 1 {
-                        q = qs.swap_remove(0);
-                    } else if qs.len() > 1 {
-                        q = Query::Or(qs);
-                    } else {
-                        continue;
-                    }
+                    let q = match qs.len().cmp(&1) {
+                        Ordering::Equal => qs.swap_remove(0),
+                        Ordering::Greater => Query::Or(qs),
+                        Ordering::Less => continue,
+                    };
                     if is_include {
                         include.push(q);
                     } else {
