@@ -74,7 +74,7 @@ impl<'a> QueryParser<'a> {
         }
         if value_start_idx <= value_end_idx {
             if self.char_it.peek().is_none() {
-                values.push(&self.query_str[value_start_idx..=value_end_idx]);
+                values.push(&self.query_str[value_start_idx..]);
             } else {
                 values.push(&self.query_str[value_start_idx..value_end_idx]);
             }
@@ -93,7 +93,7 @@ impl<'a> QueryParser<'a> {
             self.char_it.next();
         }
         if self.char_it.peek().is_none() {
-            QueryParserResult::Freetext(&self.query_str[start_idx..=end_idx])
+            QueryParserResult::Freetext(&self.query_str[start_idx..])
         } else {
             QueryParserResult::Freetext(&self.query_str[start_idx..end_idx])
         }
@@ -136,7 +136,7 @@ mod tests {
 
     #[test]
     fn query_parser_spaces() {
-        let qp = QueryParser::new("    hello  +zipcode:12345   +pet:Dog  -name:Hans   world    ");
+        let qp = QueryParser::new("  \t  hello  +zipcode:12345  \n +pet:Dog  -name:Hans   world    ");
         let result: Vec<QueryParserResult> = qp.collect();
         assert_eq!(
             result,
@@ -162,6 +162,58 @@ mod tests {
                 QueryParserResult::Attribute(true, "a3", vec!["v1", "v2", "v3"]),
                 QueryParserResult::Attribute(false, "a4", vec!["v1", "v2"]),
                 QueryParserResult::Attribute(false, "a5", vec!["v1", "v2"]),
+            ],
+        );
+    }
+
+    #[test]
+    fn query_parser_garbage() {
+        let qp = QueryParser::new("\ne376$$bf% sfse-§$\t hello+world ÄÖÜ-+- 😁☝🏼\n\t");
+        let result: Vec<QueryParserResult> = qp.collect();
+        assert_eq!(
+            result,
+            vec![
+                QueryParserResult::Freetext("e376$$bf%"),
+                QueryParserResult::Freetext("sfse-§$"),
+                QueryParserResult::Freetext("hello+world"),
+                QueryParserResult::Freetext("ÄÖÜ-+-"),
+                QueryParserResult::Freetext("😁☝🏼"),
+            ],
+        );
+    }
+
+    #[test]
+    fn query_parser_single_char() {
+        let qp = QueryParser::new("A");
+        let result: Vec<QueryParserResult> = qp.collect();
+        assert_eq!(
+            result,
+            vec![
+                QueryParserResult::Freetext("A"),
+            ],
+        );
+    }
+
+    #[test]
+    fn query_parser_single_umlaut() {
+        let qp = QueryParser::new("Ä");
+        let result: Vec<QueryParserResult> = qp.collect();
+        assert_eq!(
+            result,
+            vec![
+                QueryParserResult::Freetext("Ä"),
+            ],
+        );
+    }
+
+    #[test]
+    fn query_parser_single_emoji() {
+        let qp = QueryParser::new("😁");
+        let result: Vec<QueryParserResult> = qp.collect();
+        assert_eq!(
+            result,
+            vec![
+                QueryParserResult::Freetext("😁"),
             ],
         );
     }
