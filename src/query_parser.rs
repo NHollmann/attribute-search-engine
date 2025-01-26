@@ -136,7 +136,8 @@ mod tests {
 
     #[test]
     fn query_parser_spaces() {
-        let qp = QueryParser::new("  \t  hello  +zipcode:12345  \n +pet:Dog  -name:Hans   world    ");
+        let qp =
+            QueryParser::new("  \t  hello  +zipcode:12345  \n +pet:Dog  -name:Hans   world    ");
         let result: Vec<QueryParserResult> = qp.collect();
         assert_eq!(
             result,
@@ -186,35 +187,20 @@ mod tests {
     fn query_parser_single_char() {
         let qp = QueryParser::new("A");
         let result: Vec<QueryParserResult> = qp.collect();
-        assert_eq!(
-            result,
-            vec![
-                QueryParserResult::Freetext("A"),
-            ],
-        );
+        assert_eq!(result, vec![QueryParserResult::Freetext("A")]);
     }
 
     #[test]
     fn query_parser_single_umlaut() {
         let qp = QueryParser::new("Ä");
         let result: Vec<QueryParserResult> = qp.collect();
-        assert_eq!(
-            result,
-            vec![
-                QueryParserResult::Freetext("Ä"),
-            ],
-        );
+        assert_eq!(result, vec![QueryParserResult::Freetext("Ä")]);
     }
 
     #[test]
     fn query_parser_single_emoji() {
-        let qp = QueryParser::new("😁");
+        let qp = QueryParser::new("☝🏼");
         let result: Vec<QueryParserResult> = qp.collect();
-        assert_eq!(
-            result,
-            vec![
-                QueryParserResult::Freetext("😁"),
-            ],
-        );
+        assert_eq!(result, vec![QueryParserResult::Freetext("☝🏼")]);
     }
 }
