@@ -1,17 +1,29 @@
 use std::{char, iter::Peekable, str::CharIndices};
 
+/// A single token in a query string.
+/// It only saves slices into the source query.
 #[derive(Debug, PartialEq)]
 pub enum QueryToken<'a> {
+    /// A full attribute in the query string.
+    /// 
+    /// The boolean indicates if the attribute is inclusive or exclusive.
+    /// The first string slice is the name of the index, the vector of string
+    /// slices saves the attribute values that are queried.
     Attribute(bool, &'a str, Vec<&'a str>),
+
+    /// A non-relevant non-whitespace part of the query string.
     Freetext(&'a str),
 }
 
+/// QueryLexer is an iterator that takes a string slice and returns
+/// [QueryTokens](QueryToken) for each relevant section in the input slice.
 pub struct QueryLexer<'a> {
     query_str: &'a str,
     char_it: Peekable<CharIndices<'a>>,
 }
 
 impl<'a> QueryLexer<'a> {
+    /// Creates a new QueryLexer object
     pub fn new(query_str: &'a str) -> Self {
         QueryLexer {
             query_str,

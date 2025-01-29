@@ -13,7 +13,7 @@ pub struct HashSetPrefixTree<P> {
 }
 
 impl<P: Eq + Hash + Clone> HashSetPrefixTree<P> {
-    /// Creates a new `HashSetPrefixTree` object
+    /// Creates a new HashSetPrefixTree object
     pub fn new() -> HashSetPrefixTree<P> {
         // Initialize the root node
         let nodes = vec![TreeNode::new(None)];
@@ -82,7 +82,7 @@ impl<P: Eq + Hash + Clone> HashSetPrefixTree<P> {
         Some(result_set)
     }
 
-    /// Find a `TreeNode` in the tree by its key.
+    /// Find a [TreeNode] in the tree by its key.
     fn find_node(&self, key: &str) -> Option<usize> {
         if self.nodes.is_empty() {
             return None;

@@ -26,7 +26,7 @@
 //! engine.add_index("name", index_name);
 //! engine.add_index("age", index_age);
 //! engine.add_index("address", index_address);
-//! 
+//!
 //! // We can create queries of any complexity with the Query type.
 //! let q = Query::And(vec![
 //!     Query::Or(vec![
@@ -36,7 +36,7 @@
 //!     Query::Prefix("address".into(), "Germany/".into()),
 //! ]);
 //! assert_eq!(engine.search(&q), Ok(HashSet::from_iter(vec![0, 1])));
-//! 
+//!
 //! // The search engine also has the ability to parse strings into
 //! // queries. Check the documentation of SearchEngine::query_from_str
 //! // for more details. Parsed queries are by design a lot more limited
