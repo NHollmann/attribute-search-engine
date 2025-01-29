@@ -51,7 +51,7 @@ impl<'a> QueryParser<'a> {
             }
             value_start_idx = column_idx + 1;
         } else {
-            return QueryParserResult::Freetext(&self.query_str[start_idx..attr_end_idx]);
+            return QueryParserResult::Freetext(&self.query_str[start_idx..]);
         }
         self.char_it.next();
 
@@ -134,6 +134,13 @@ mod tests {
     query_parse_test! {single_char "A"; Freetext("A")}
     query_parse_test! {single_umlaut "Ä"; Freetext("Ä")}
     query_parse_test! {single_emoji "☝🏼"; Freetext("☝🏼")}
+    query_parse_test! {single_plus "+"; Freetext("+")}
+    query_parse_test! {single_minus "-"; Freetext("-")}
+    query_parse_test! {single_colon ":"; Freetext(":")}
+    query_parse_test! {single_attribute "+a:b"; Attribute(true, "a", vec!["b"])}
+    query_parse_test! {half_attribute "+a"; Freetext("+a")}
+    query_parse_test! {plus_colon ":+"; Freetext(":+")}
+    query_parse_test! {empty_attribute "+a:"; Attribute(true, "a", vec![])}
 
     query_parse_test! {
         basic "hello  +zipcode:12345  +pet:Dog  -name:Hans  world";
@@ -169,6 +176,15 @@ mod tests {
         Freetext("hello+world"),
         Freetext("ÄÖÜ-+-"),
         Freetext("😁☝🏼"),
+    }
+
+    query_parse_test! {
+        incomplete " + - +a -b +a-b ";
+        Freetext("+"),
+        Freetext("-"),
+        Freetext("+a"),
+        Freetext("-b"),
+        Freetext("+a-b"),
     }
 
     query_parse_test! {
