@@ -47,7 +47,7 @@ mod engine;
 mod error;
 mod index;
 mod query;
-mod query_parser;
+mod query_lexer;
 
 pub use engine::*;
 pub use error::*;

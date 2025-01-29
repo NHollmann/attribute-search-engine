@@ -5,7 +5,7 @@ use std::hash::Hash;
 use crate::error::*;
 use crate::index::*;
 use crate::query::*;
-use crate::query_parser::*;
+use crate::query_lexer::*;
 
 /// A SearchEngine is a wrapper around a collection of [search indices](SearchIndex)
 /// that can process complex [queries](Query) involving multiple indices.
@@ -116,10 +116,10 @@ impl<P: Eq + Hash + Clone> SearchEngine<P> {
         let mut include = vec![];
         let mut exclude = vec![];
 
-        let parser = QueryParser::new(query_str);
-        for subquery in parser {
+        let lexer = QueryLexer::new(query_str);
+        for subquery in lexer {
             match subquery {
-                QueryParserResult::Attribute(is_include, attribute, values) => {
+                QueryToken::Attribute(is_include, attribute, values) => {
                     let mut qs: Vec<_> = values
                         .iter()
                         .map(|&v| Query::Exact(attribute.to_owned(), v.to_owned()))
@@ -135,7 +135,7 @@ impl<P: Eq + Hash + Clone> SearchEngine<P> {
                         exclude.push(q);
                     }
                 }
-                QueryParserResult::Freetext(_) => {}
+                QueryToken::Freetext(_) => {}
             }
         }
 
