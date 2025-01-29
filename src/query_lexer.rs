@@ -5,7 +5,7 @@ use std::{char, iter::Peekable, str::CharIndices};
 #[derive(Debug, PartialEq)]
 pub enum QueryToken<'a> {
     /// A full attribute in the query string.
-    /// 
+    ///
     /// The boolean indicates if the attribute is inclusive or exclusive.
     /// The first string slice is the name of the index, the vector of string
     /// slices saves the attribute values that are queried.
@@ -23,7 +23,7 @@ pub struct QueryLexer<'a> {
 }
 
 impl<'a> QueryLexer<'a> {
-    /// Creates a new QueryLexer object
+    /// Creates a new QueryLexer object.
     pub fn new(query_str: &'a str) -> Self {
         QueryLexer {
             query_str,
@@ -31,6 +31,7 @@ impl<'a> QueryLexer<'a> {
         }
     }
 
+    // Skip whitespace in input.
     fn skip_whitespace(&mut self) {
         while let Some(&(_, c)) = self.char_it.peek() {
             if !char::is_whitespace(c) {
@@ -40,7 +41,31 @@ impl<'a> QueryLexer<'a> {
         }
     }
 
-    fn try_read_attribute(&mut self) -> QueryToken<'a> {
+    /// Read until the first whitespace character or the end of the
+    /// string slice and return a [Freetext Token](QueryToken::Freetext).
+    fn read_freetext(&mut self, start_idx: usize) -> QueryToken<'a> {
+        let mut end_idx = start_idx;
+        while let Some(&(idx, c)) = self.char_it.peek() {
+            end_idx = idx;
+            if char::is_whitespace(c) {
+                break;
+            }
+            self.char_it.next();
+        }
+        // We use the end_idx only if we are not at the end of the
+        // input slice.
+        if self.char_it.peek().is_none() {
+            QueryToken::Freetext(&self.query_str[start_idx..])
+        } else {
+            QueryToken::Freetext(&self.query_str[start_idx..end_idx])
+        }
+    }
+
+    /// Read a full attribute including index name and a vector of values.
+    /// On success an [Attribute Token](QueryToken::Attribute) is returned.
+    /// If at some point the input is malformed, a [Freetext Token](QueryToken::Freetext)
+    /// is returned instead.
+    fn read_attribute(&mut self) -> QueryToken<'a> {
         let (start_idx, first_char) = self.char_it.next().unwrap();
         let attr_start_idx = start_idx + 1;
         let mut attr_end_idx = attr_start_idx;
@@ -94,22 +119,6 @@ impl<'a> QueryLexer<'a> {
 
         QueryToken::Attribute(first_char == '+', attribute_name, values)
     }
-
-    fn read_freetext(&mut self, start_idx: usize) -> QueryToken<'a> {
-        let mut end_idx = start_idx;
-        while let Some(&(idx, c)) = self.char_it.peek() {
-            end_idx = idx;
-            if char::is_whitespace(c) {
-                break;
-            }
-            self.char_it.next();
-        }
-        if self.char_it.peek().is_none() {
-            QueryToken::Freetext(&self.query_str[start_idx..])
-        } else {
-            QueryToken::Freetext(&self.query_str[start_idx..end_idx])
-        }
-    }
 }
 
 impl<'a> Iterator for QueryLexer<'a> {
@@ -120,7 +129,7 @@ impl<'a> Iterator for QueryLexer<'a> {
 
         let &(start_idx, first_char) = self.char_it.peek()?;
         if first_char == '+' || first_char == '-' {
-            return Some(self.try_read_attribute());
+            return Some(self.read_attribute());
         }
         Some(self.read_freetext(start_idx))
     }

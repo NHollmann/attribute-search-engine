@@ -112,6 +112,9 @@ impl<P: Eq + Hash + Clone> SearchEngine<P> {
         }
     }
 
+    /// Build a [Query] from a string slice.
+    ///
+    /// TODO Format description, Limitations, Example, Freetext
     pub fn query_from_str(&self, query_str: &str) -> Result<Query> {
         let mut include = vec![];
         let mut exclude = vec![];
