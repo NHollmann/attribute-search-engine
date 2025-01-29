@@ -116,91 +116,63 @@ impl<'a> Iterator for QueryParser<'a> {
 
 #[cfg(test)]
 mod tests {
+    use super::QueryParserResult::*;
     use super::*;
 
-    #[test]
-    fn query_parser_basic() {
-        let qp = QueryParser::new("hello  +zipcode:12345  +pet:Dog  -name:Hans  world");
-        let result: Vec<QueryParserResult> = qp.collect();
-        assert_eq!(
-            result,
-            vec![
-                QueryParserResult::Freetext("hello"),
-                QueryParserResult::Attribute(true, "zipcode", vec!["12345"]),
-                QueryParserResult::Attribute(true, "pet", vec!["Dog"]),
-                QueryParserResult::Attribute(false, "name", vec!["Hans"]),
-                QueryParserResult::Freetext("world"),
-            ],
-        );
+    macro_rules! query_parse_test {
+        ($name:ident $query:literal; $($res:expr),* $(,)?) => {
+            #[test]
+            fn $name() {
+                let qp = QueryParser::new($query);
+                let result: Vec<QueryParserResult> = qp.collect();
+                assert_eq!(result, vec![$($res),*]);
+            }
+        };
     }
 
-    #[test]
-    fn query_parser_spaces() {
-        let qp =
-            QueryParser::new("  \t  hello  +zipcode:12345  \n +pet:Dog  -name:Hans   world    ");
-        let result: Vec<QueryParserResult> = qp.collect();
-        assert_eq!(
-            result,
-            vec![
-                QueryParserResult::Freetext("hello"),
-                QueryParserResult::Attribute(true, "zipcode", vec!["12345"]),
-                QueryParserResult::Attribute(true, "pet", vec!["Dog"]),
-                QueryParserResult::Attribute(false, "name", vec!["Hans"]),
-                QueryParserResult::Freetext("world"),
-            ],
-        );
+    query_parse_test! {empty "";}
+    query_parse_test! {single_char "A"; Freetext("A")}
+    query_parse_test! {single_umlaut "Ä"; Freetext("Ä")}
+    query_parse_test! {single_emoji "☝🏼"; Freetext("☝🏼")}
+
+    query_parse_test! {
+        basic "hello  +zipcode:12345  +pet:Dog  -name:Hans  world";
+        Freetext("hello"),
+        Attribute(true, "zipcode", vec!["12345"]),
+        Attribute(true, "pet", vec!["Dog"]),
+        Attribute(false, "name", vec!["Hans"]),
+        Freetext("world"),
     }
 
-    #[test]
-    fn query_parser_comma() {
-        let qp = QueryParser::new("+a1:v1 +a2:v1,v2 +a3:v1,v2,v3 -a4:v1,,v2 -a5:v1,v2,");
-        let result: Vec<QueryParserResult> = qp.collect();
-        assert_eq!(
-            result,
-            vec![
-                QueryParserResult::Attribute(true, "a1", vec!["v1"]),
-                QueryParserResult::Attribute(true, "a2", vec!["v1", "v2"]),
-                QueryParserResult::Attribute(true, "a3", vec!["v1", "v2", "v3"]),
-                QueryParserResult::Attribute(false, "a4", vec!["v1", "v2"]),
-                QueryParserResult::Attribute(false, "a5", vec!["v1", "v2"]),
-            ],
-        );
+    query_parse_test! {
+        spaces "  \t  hello  +zipcode:12345  \n +pet:Dog  -name:Hans   world    ";
+        Freetext("hello"),
+        Attribute(true, "zipcode", vec!["12345"]),
+        Attribute(true, "pet", vec!["Dog"]),
+        Attribute(false, "name", vec!["Hans"]),
+        Freetext("world"),
     }
 
-    #[test]
-    fn query_parser_garbage() {
-        let qp = QueryParser::new("\ne376$$bf% sfse-§$\t hello+world ÄÖÜ-+- 😁☝🏼\n\t");
-        let result: Vec<QueryParserResult> = qp.collect();
-        assert_eq!(
-            result,
-            vec![
-                QueryParserResult::Freetext("e376$$bf%"),
-                QueryParserResult::Freetext("sfse-§$"),
-                QueryParserResult::Freetext("hello+world"),
-                QueryParserResult::Freetext("ÄÖÜ-+-"),
-                QueryParserResult::Freetext("😁☝🏼"),
-            ],
-        );
+    query_parse_test! {
+        comma "+a1:v1 +a2:v1,v2 +a3:v1,v2,v3 -a4:v1,,v2 -a5:v1,v2,";
+        Attribute(true, "a1", vec!["v1"]),
+        Attribute(true, "a2", vec!["v1", "v2"]),
+        Attribute(true, "a3", vec!["v1", "v2", "v3"]),
+        Attribute(false, "a4", vec!["v1", "v2"]),
+        Attribute(false, "a5", vec!["v1", "v2"]),
     }
 
-    #[test]
-    fn query_parser_single_char() {
-        let qp = QueryParser::new("A");
-        let result: Vec<QueryParserResult> = qp.collect();
-        assert_eq!(result, vec![QueryParserResult::Freetext("A")]);
+    query_parse_test! {
+        garbage "\ne376$$bf% sfse-§$\t hello+world ÄÖÜ-+- 😁☝🏼\n\t";
+        Freetext("e376$$bf%"),
+        Freetext("sfse-§$"),
+        Freetext("hello+world"),
+        Freetext("ÄÖÜ-+-"),
+        Freetext("😁☝🏼"),
     }
 
-    #[test]
-    fn query_parser_single_umlaut() {
-        let qp = QueryParser::new("Ä");
-        let result: Vec<QueryParserResult> = qp.collect();
-        assert_eq!(result, vec![QueryParserResult::Freetext("Ä")]);
-    }
-
-    #[test]
-    fn query_parser_single_emoji() {
-        let qp = QueryParser::new("☝🏼");
-        let result: Vec<QueryParserResult> = qp.collect();
-        assert_eq!(result, vec![QueryParserResult::Freetext("☝🏼")]);
+    query_parse_test! {
+        chained "+a:hello+b:world-foo:+bar,-baz:,buzz";
+        Attribute(true, "a", vec!["hello+b:world-foo:+bar", "-baz:", "buzz"]),
     }
 }
