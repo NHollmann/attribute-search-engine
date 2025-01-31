@@ -155,6 +155,69 @@ impl<P: Eq + Hash + Clone> SearchEngine<P> {
 mod tests {
     use super::*;
 
+    struct DummyIndex {
+        fixed_values: HashSet<usize>,
+        supported_queries: SupportedQueries,
+    }
+
+    impl DummyIndex {
+        fn new(vals: Vec<usize>) -> Self {
+            Self {
+                fixed_values: HashSet::from_iter(vals),
+                supported_queries: SUPPORTS_EXACT,
+            }
+        }
+    }
+
+    impl SearchIndex<usize> for DummyIndex {
+        fn search(&self, _query: &Query) -> Result<HashSet<usize>> {
+            Ok(self.fixed_values.clone())
+        }
+
+        fn supported_queries(&self) -> SupportedQueries {
+            self.supported_queries
+        }
+    }
+
+    #[test]
+    fn search_or() {
+        let mut engine = SearchEngine::<usize>::new();
+        engine.add_index("a", DummyIndex::new(vec![1, 2]));
+        engine.add_index("b", DummyIndex::new(vec![3, 4]));
+        engine.add_index("c", DummyIndex::new(vec![2, 5, 6]));
+        let result = engine.search(&Query::Or(vec![
+            Query::Exact("a".into(), "DUMMY".into()),
+            Query::Exact("c".into(), "DUMMY".into()),
+        ]));
+        assert_eq!(result, Ok(HashSet::from_iter(vec![1, 2, 5, 6])));
+    }
+
+    #[test]
+    fn search_and() {
+        let mut engine = SearchEngine::<usize>::new();
+        engine.add_index("a", DummyIndex::new(vec![1, 2]));
+        engine.add_index("b", DummyIndex::new(vec![3, 4]));
+        engine.add_index("c", DummyIndex::new(vec![2, 5, 6]));
+        let result = engine.search(&Query::And(vec![
+            Query::Exact("a".into(), "DUMMY".into()),
+            Query::Exact("c".into(), "DUMMY".into()),
+        ]));
+        assert_eq!(result, Ok(HashSet::from_iter(vec![2])));
+    }
+
+    #[test]
+    fn search_exclude() {
+        let mut engine = SearchEngine::<usize>::new();
+        engine.add_index("a", DummyIndex::new(vec![1, 2]));
+        engine.add_index("b", DummyIndex::new(vec![3, 4]));
+        engine.add_index("c", DummyIndex::new(vec![2, 5, 6]));
+        let result = engine.search(&Query::Exclude(
+            Box::new(Query::Exact("c".into(), "DUMMY".into())),
+            vec![Query::Exact("a".into(), "DUMMY".into())],
+        ));
+        assert_eq!(result, Ok(HashSet::from_iter(vec![5, 6])));
+    }
+
     #[test]
     fn query_parser() {
         let engine = SearchEngine::<usize>::new();
