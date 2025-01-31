@@ -31,7 +31,19 @@ impl<'a> QueryLexer<'a> {
         }
     }
 
-    // Skip whitespace in input.
+    /// Return the next token found or None if the query_str is
+    /// exhausted.
+    fn next_token(&mut self) -> Option<QueryToken<'a>> {
+        self.skip_whitespace();
+
+        let &(start_idx, first_char) = self.char_it.peek()?;
+        if first_char == '+' || first_char == '-' {
+            return Some(self.read_attribute());
+        }
+        Some(self.read_freetext(start_idx))
+    }
+
+    /// Skip whitespace in input.
     fn skip_whitespace(&mut self) {
         while let Some(&(_, c)) = self.char_it.peek() {
             if !char::is_whitespace(c) {
@@ -44,21 +56,13 @@ impl<'a> QueryLexer<'a> {
     /// Read until the first whitespace character or the end of the
     /// string slice and return a [Freetext Token](QueryToken::Freetext).
     fn read_freetext(&mut self, start_idx: usize) -> QueryToken<'a> {
-        let mut end_idx = start_idx;
         while let Some(&(idx, c)) = self.char_it.peek() {
-            end_idx = idx;
             if char::is_whitespace(c) {
-                break;
+                return QueryToken::Freetext(&self.query_str[start_idx..idx]);
             }
             self.char_it.next();
         }
-        // We use the end_idx only if we are not at the end of the
-        // input slice.
-        if self.char_it.peek().is_none() {
-            QueryToken::Freetext(&self.query_str[start_idx..])
-        } else {
-            QueryToken::Freetext(&self.query_str[start_idx..end_idx])
-        }
+        QueryToken::Freetext(&self.query_str[start_idx..])
     }
 
     /// Read a full attribute including index name and a vector of values.
@@ -67,57 +71,69 @@ impl<'a> QueryLexer<'a> {
     /// is returned instead.
     fn read_attribute(&mut self) -> QueryToken<'a> {
         let (start_idx, first_char) = self.char_it.next().unwrap();
-        let attr_start_idx = start_idx + 1;
-        let mut attr_end_idx = attr_start_idx;
 
+        let (attribute_index, attribute_ok) = self.read_attribute_index(start_idx + 1);
+        if !attribute_ok || attribute_index.is_empty() {
+            return self.read_freetext(start_idx);
+        }
+        let (colon_idx, c) = self
+            .char_it
+            .next()
+            .expect("if attribute_ok is true there must be a next char");
+        assert_eq!(
+            c, ':',
+            "if attribute_ok is true, the next char should be a colon"
+        );
+
+        let attribute_values = self.read_attribute_values(colon_idx + 1);
+        QueryToken::Attribute(first_char == '+', attribute_index, attribute_values)
+    }
+
+    /// Read the name of an attribute index. Stop if a colon, a
+    /// unexpected character or the end of the string is found.
+    /// The second value of the result tuple indicates if a colon
+    /// was found at the end.
+    fn read_attribute_index(&mut self, start_idx: usize) -> (&'a str, bool) {
         while let Some(&(idx, c)) = self.char_it.peek() {
-            attr_end_idx = idx;
-            if c == ':' {
-                break;
-            }
-            if !char::is_alphanumeric(c) {
-                break;
+            if c == ':' || !char::is_alphanumeric(c) {
+                return (&self.query_str[start_idx..idx], c == ':');
             }
             self.char_it.next();
         }
+        // If we are at the end of the query string, this can't be a valid
+        // attribute.
+        ("", false)
+    }
 
-        let mut value_start_idx;
-        if let Some(&(column_idx, c)) = self.char_it.peek() {
-            if c != ':' {
-                return self.read_freetext(start_idx);
-            }
-            value_start_idx = column_idx + 1;
-        } else {
-            return QueryToken::Freetext(&self.query_str[start_idx..]);
-        }
-        self.char_it.next();
-
-        let attribute_name = &self.query_str[attr_start_idx..attr_end_idx];
-
+    /// Read a vector of comma seperated attributes from the query string.
+    fn read_attribute_values(&mut self, mut value_start_idx: usize) -> Vec<&'a str> {
         let mut values = vec![];
-        let mut value_end_idx = 0;
+
         while let Some(&(idx, c)) = self.char_it.peek() {
-            value_end_idx = idx;
-            if c == ',' {
-                if value_start_idx < value_end_idx {
-                    values.push(&self.query_str[value_start_idx..value_end_idx]);
+            if c == ',' || char::is_whitespace(c) {
+                // We only push non-empty values to our result vector.
+                if value_start_idx < idx {
+                    values.push(&self.query_str[value_start_idx..idx]);
                 }
+
+                // If we found a whitespace, we exit directly.
+                if char::is_whitespace(c) {
+                    return values;
+                }
+
                 value_start_idx = idx + 1;
             }
-            if char::is_whitespace(c) {
-                break;
-            }
             self.char_it.next();
         }
-        if value_start_idx <= value_end_idx {
-            if self.char_it.peek().is_none() {
-                values.push(&self.query_str[value_start_idx..]);
-            } else {
-                values.push(&self.query_str[value_start_idx..value_end_idx]);
-            }
+
+        // This case may happen if the last value is at the end of the query string.
+        // If it is not empty, we want to append it to the result vector.
+        let last_value = &self.query_str[value_start_idx..];
+        if !last_value.is_empty() {
+            values.push(last_value);
         }
 
-        QueryToken::Attribute(first_char == '+', attribute_name, values)
+        values
     }
 }
 
@@ -125,13 +141,7 @@ impl<'a> Iterator for QueryLexer<'a> {
     type Item = QueryToken<'a>;
 
     fn next(&mut self) -> Option<Self::Item> {
-        self.skip_whitespace();
-
-        let &(start_idx, first_char) = self.char_it.peek()?;
-        if first_char == '+' || first_char == '-' {
-            return Some(self.read_attribute());
-        }
-        Some(self.read_freetext(start_idx))
+        self.next_token()
     }
 }
 
@@ -160,8 +170,10 @@ mod tests {
     query_lexer_test! {single_colon ":"; Freetext(":")}
     query_lexer_test! {single_attribute "+a:b"; Attribute(true, "a", vec!["b"])}
     query_lexer_test! {half_attribute "+a"; Freetext("+a")}
-    query_lexer_test! {plus_colon ":+"; Freetext(":+")}
+    query_lexer_test! {plus_colon "+:"; Freetext("+:")}
+    query_lexer_test! {colon_plus ":+"; Freetext(":+")}
     query_lexer_test! {empty_attribute "+a:"; Attribute(true, "a", vec![])}
+    query_lexer_test! {empty_attribute_space "+a: "; Attribute(true, "a", vec![])}
 
     query_lexer_test! {
         basic "hello  +zipcode:12345  +pet:Dog  -name:Hans  world";
@@ -182,12 +194,13 @@ mod tests {
     }
 
     query_lexer_test! {
-        comma "+a1:v1 +a2:v1,v2 +a3:v1,v2,v3 -a4:v1,,v2 -a5:v1,v2,";
+        comma "+a1:v1 +a2:v1,v2 +a3:v1,v2,v3 -a4:v1,,v2 -a5:v1,v2, +a6:,,,";
         Attribute(true, "a1", vec!["v1"]),
         Attribute(true, "a2", vec!["v1", "v2"]),
         Attribute(true, "a3", vec!["v1", "v2", "v3"]),
         Attribute(false, "a4", vec!["v1", "v2"]),
         Attribute(false, "a5", vec!["v1", "v2"]),
+        Attribute(true, "a6", vec![]),
     }
 
     query_lexer_test! {
