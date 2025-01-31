@@ -1,7 +1,7 @@
 mod tree;
 
 use super::SearchIndex;
-use crate::{Query, Result, SearchEngineError};
+use crate::{Query, Result, SearchEngineError, SUPPORTS_EXACT, SUPPORTS_PREFIX};
 use std::{collections::HashSet, hash::Hash};
 use tree::HashSetPrefixTree;
 
@@ -78,6 +78,10 @@ impl<P: Eq + Hash + Clone> SearchIndex<P> for SearchIndexPrefixTree<P> {
             Query::Prefix(_, value) => Ok(self.index.get_prefix(value).unwrap_or_default()),
             _ => Err(SearchEngineError::UnsupportedQuery),
         }
+    }
+
+    fn supported_queries(&self) -> crate::SupportedQueries {
+        SUPPORTS_EXACT | SUPPORTS_PREFIX
     }
 }
 

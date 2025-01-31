@@ -55,3 +55,24 @@ pub enum Query {
     /// on of the matches of the query vector.
     Exclude(Box<Query>, Vec<Query>),
 }
+
+/// Bitmask type for queries that are supported by an index.
+pub type SupportedQueries = u8;
+
+/// Signals that an index supports [Exact queries](Query::Exact).
+pub const SUPPORTS_EXACT: SupportedQueries = 1 << 0;
+
+/// Signals that an index supports [Prefix queries](Query::Prefix).
+pub const SUPPORTS_PREFIX: SupportedQueries = 1 << 1;
+
+/// Signals that an index supports [InRange queries](Query::InRange).
+pub const SUPPORTS_INRANGE: SupportedQueries = 1 << 2;
+
+/// Signals that an index supports [OutRange queries](Query::OutRange).
+pub const SUPPORTS_OUTRANGE: SupportedQueries = 1 << 3;
+
+/// Signals that an index supports [Minimum queries](Query::Minimum).
+pub const SUPPORTS_MINIMUM: SupportedQueries = 1 << 4;
+
+/// Signals that an index supports [Maximum queries](Query::Maximum).
+pub const SUPPORTS_MAXIMUM: SupportedQueries = 1 << 5;

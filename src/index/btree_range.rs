@@ -1,5 +1,8 @@
 use super::{string_to_payload_type, SearchIndex};
-use crate::{Query, Result, SearchEngineError};
+use crate::{
+    Query, Result, SearchEngineError, SUPPORTS_EXACT, SUPPORTS_INRANGE, SUPPORTS_MAXIMUM,
+    SUPPORTS_MINIMUM, SUPPORTS_OUTRANGE,
+};
 use std::{
     collections::{BTreeMap, HashSet},
     hash::Hash,
@@ -135,6 +138,10 @@ where
             }
             _ => Err(SearchEngineError::UnsupportedQuery),
         }
+    }
+
+    fn supported_queries(&self) -> crate::SupportedQueries {
+        SUPPORTS_EXACT | SUPPORTS_INRANGE | SUPPORTS_MINIMUM | SUPPORTS_MAXIMUM | SUPPORTS_OUTRANGE
     }
 }
 

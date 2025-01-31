@@ -1,5 +1,5 @@
 use super::{string_to_payload_type, SearchIndex};
-use crate::{Query, Result, SearchEngineError};
+use crate::{Query, Result, SearchEngineError, SUPPORTS_EXACT};
 use std::{
     collections::{HashMap, HashSet},
     hash::Hash,
@@ -92,6 +92,10 @@ impl<P: Clone, V: Eq + Hash + FromStr> SearchIndex<P> for SearchIndexHashMap<P, 
             }
             _ => Err(SearchEngineError::UnsupportedQuery),
         }
+    }
+
+    fn supported_queries(&self) -> crate::SupportedQueries {
+        SUPPORTS_EXACT
     }
 }
 

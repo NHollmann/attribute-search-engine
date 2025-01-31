@@ -1,4 +1,4 @@
-use crate::{Query, Result, SearchEngineError};
+use crate::{Query, Result, SearchEngineError, SupportedQueries};
 use std::{collections::HashSet, str::FromStr};
 
 mod btree_range;
@@ -23,6 +23,14 @@ pub trait SearchIndex<P> {
     /// the expected payload type, this function returns
     /// [MismatchedQueryType](crate::error::SearchEngineError::MismatchedQueryType).
     fn search(&self, query: &Query) -> Result<HashSet<P>>;
+
+    /// Returns which queries are directly supported by an index.
+    ///
+    /// This function may be used for some features and optimizations by
+    /// a [SearchEngine](crate::engine::SearchEngine). For example, it
+    /// signals which operators (=,>,<,-) in the query parser are supported
+    /// by an index.
+    fn supported_queries(&self) -> SupportedQueries;
 }
 
 /// Tries to parse a string into a payload value.
