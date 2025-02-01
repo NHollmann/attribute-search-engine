@@ -60,6 +60,6 @@ assert_eq!(engine.search(&q), Ok(HashSet::from_iter(vec![0, 1])));
 // for more details. Parsed queries are by design a lot more limited
 // then manually constructed queries. The construction of queries
 // can fail for example if unknown indices are referenced.
-let q = engine.query_from_str("+name:Alice +address:Germany/Hamburg -age:25").unwrap();
+let q = engine.query_from_str("+name:Alice +address:Germany/ -age:25").unwrap();
 assert_eq!(engine.search(&q), Ok(HashSet::from_iter(vec![0])));
 ```

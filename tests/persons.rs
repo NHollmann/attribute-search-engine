@@ -105,13 +105,15 @@ fn query_advanced() {
 fn query_parser() {
     let engine = create_person_search_engine();
 
-    let q = engine
+    let (q, ft) = engine
         .query_from_str("+zipcode:12345 +pet:Dog -name:Hans")
         .expect("valid query");
     assert_eq!(engine.search(&q), Ok(HashSet::from_iter(vec![1, 5])));
+    assert_eq!(ft, vec![] as Vec<&str>);
 
-    let q = engine.query_from_str("+age:27").expect("valid query");
+    let (q, ft) = engine.query_from_str("+age:27").expect("valid query");
     assert_eq!(engine.search(&q), Ok(HashSet::from_iter(vec![0, 1])));
+    assert_eq!(ft, vec![] as Vec<&str>);
 }
 
 fn create_person_search_engine() -> SearchEngine<u8> {

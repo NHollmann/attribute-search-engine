@@ -115,17 +115,52 @@ impl<P: Eq + Hash + Clone> SearchEngine<P> {
     /// Build a [Query] from a string slice.
     ///
     /// TODO Format description, Limitations, Example, Freetext
-    pub fn query_from_str(&self, query_str: &str) -> Result<Query> {
+    pub fn query_from_str<'a>(&self, query_str: &'a str) -> Result<(Query, Vec<&'a str>)> {
         let mut include = vec![];
         let mut exclude = vec![];
+        let mut freetexts = vec![];
 
         let lexer = QueryLexer::new(query_str);
         for subquery in lexer {
             match subquery {
                 QueryToken::Attribute(is_include, attribute, values) => {
+                    let index = self
+                        .indices
+                        .get(attribute)
+                        .ok_or(SearchEngineError::UnknownAttribute)?;
+                    let supported = index.supported_queries();
+
                     let mut qs: Vec<_> = values
                         .iter()
-                        .map(|&v| Query::Exact(attribute.to_owned(), v.to_owned()))
+                        .map(|&v| {
+                            let attr = attribute.to_owned();
+                            if (supported & SUPPORTS_MINIMUM) != 0 && v.starts_with('>') {
+                                return Query::Minimum(attr, v[1..].to_owned());
+                            }
+                            if (supported & SUPPORTS_MAXIMUM) != 0 && v.starts_with('<') {
+                                return Query::Maximum(attr, v[1..].to_owned());
+                            }
+                            if (supported & SUPPORTS_EXACT) != 0 && v.starts_with('=') {
+                                return Query::Exact(attr, v[1..].to_owned());
+                            }
+                            if (supported & SUPPORTS_INRANGE) != 0 && v.contains('-') {
+                                let parts = v.split('-').collect::<Vec<_>>();
+                                if parts.len() == 2 {
+                                    return Query::InRange(
+                                        attr,
+                                        parts[0].to_owned(),
+                                        parts[1].to_owned(),
+                                    );
+                                }
+                            }
+
+                            // Fallback, if nothing is found we use prefix if we can
+                            // and exact otherwise.
+                            if (supported & SUPPORTS_PREFIX) != 0 {
+                                return Query::Prefix(attr, v.to_owned());
+                            }
+                            Query::Exact(attr, v.to_owned())
+                        })
                         .collect();
                     let q = match qs.len().cmp(&1) {
                         Ordering::Equal => qs.swap_remove(0),
@@ -138,15 +173,17 @@ impl<P: Eq + Hash + Clone> SearchEngine<P> {
                         exclude.push(q);
                     }
                 }
-                QueryToken::Freetext(_) => {}
+                QueryToken::Freetext(text) => {
+                    freetexts.push(text);
+                }
             }
         }
 
         let base_query = Query::And(include);
         if !exclude.is_empty() {
-            Ok(Query::Exclude(base_query.into(), exclude))
+            Ok((Query::Exclude(base_query.into(), exclude), freetexts))
         } else {
-            Ok(base_query)
+            Ok((base_query, freetexts))
         }
     }
 }
@@ -165,6 +202,13 @@ mod tests {
             Self {
                 fixed_values: HashSet::from_iter(vals),
                 supported_queries: SUPPORTS_EXACT,
+            }
+        }
+
+        fn supports(sup: SupportedQueries) -> Self {
+            Self {
+                fixed_values: HashSet::new(),
+                supported_queries: sup,
             }
         }
     }
@@ -218,15 +262,35 @@ mod tests {
         assert_eq!(result, Ok(HashSet::from_iter(vec![5, 6])));
     }
 
+    fn create_parser_engine() -> SearchEngine<usize> {
+        let mut engine = SearchEngine::<usize>::new();
+        engine.add_index(
+            "zipcode",
+            DummyIndex::supports(
+                SUPPORTS_EXACT | SUPPORTS_MINIMUM | SUPPORTS_MAXIMUM | SUPPORTS_INRANGE,
+            ),
+        );
+        engine.add_index("pet", DummyIndex::supports(SUPPORTS_EXACT));
+        engine.add_index(
+            "name",
+            DummyIndex::supports(SUPPORTS_EXACT | SUPPORTS_PREFIX),
+        );
+        engine
+    }
+
     #[test]
-    fn query_parser() {
-        let engine = SearchEngine::<usize>::new();
-
-        let q = engine.query_from_str("").unwrap();
+    fn query_parser_empty() {
+        let engine = create_parser_engine();
+        let (q, freetext) = engine.query_from_str("").unwrap();
         assert_eq!(q, Query::And(vec![]));
+        assert_eq!(freetext, vec![] as Vec<&str>);
+    }
 
-        let q = engine
-            .query_from_str("+zipcode:12345 +pet:Dog -name:Hans")
+    #[test]
+    fn query_parser_basic() {
+        let engine = create_parser_engine();
+        let (q, freetext) = engine
+            .query_from_str("+zipcode:12345 +pet:Dog -name:Hans freetext")
             .unwrap();
         assert_eq!(
             q,
@@ -235,8 +299,29 @@ mod tests {
                     Query::Exact("zipcode".into(), "12345".into()),
                     Query::Exact("pet".into(), "Dog".into())
                 ])),
-                vec![Query::Exact("name".into(), "Hans".into())]
+                vec![Query::Prefix("name".into(), "Hans".into())]
             )
         );
+        assert_eq!(freetext, vec!["freetext"]);
+    }
+
+    #[test]
+    fn query_parser_modificators() {
+        let engine = create_parser_engine();
+        let (q, freetext) = engine
+            .query_from_str(
+                "abc +zipcode:>12345 +zipcode:<99999 +zipcode:50000-60000 +name:=Hans def",
+            )
+            .unwrap();
+        assert_eq!(
+            q,
+            Query::And(vec![
+                Query::Minimum("zipcode".into(), "12345".into()),
+                Query::Maximum("zipcode".into(), "99999".into()),
+                Query::InRange("zipcode".into(), "50000".into(), "60000".into()),
+                Query::Exact("name".into(), "Hans".into()),
+            ])
+        );
+        assert_eq!(freetext, vec!["abc", "def"]);
     }
 }
