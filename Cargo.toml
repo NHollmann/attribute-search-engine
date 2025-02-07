@@ -17,3 +17,7 @@ criterion = { version = "0.5", features = ["html_reports"] }
 [[bench]]
 name = "search_benchmark"
 harness = false
+
+[[bench]]
+name = "insert_benchmark"
+harness = false

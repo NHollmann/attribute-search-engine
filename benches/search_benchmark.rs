@@ -1,49 +1,72 @@
-use attribute_search_engine::{SearchEngine, SearchIndexHashMap};
-use criterion::{criterion_group, criterion_main, BenchmarkId, Criterion, PlotConfiguration};
+use attribute_search_engine::{Query, SearchIndex};
+use criterion::{
+    criterion_group, criterion_main, BenchmarkId, Criterion, PlotConfiguration, Throughput,
+};
 use std::{hint::black_box, time::Duration};
 
-fn create_engine(n: usize) {
-    let mut index_a = SearchIndexHashMap::<_, String>::new();
-    let mut index_b = SearchIndexHashMap::<_, String>::new();
-    let mut index_c = SearchIndexHashMap::<_, String>::new();
-    let mut index_d = SearchIndexHashMap::<_, String>::new();
+mod indices;
+use indices::*;
 
-    for i in 0..n {
-        index_a.insert(i, format!("{}", i % 10));
-        if i % 2 == 0 {
-            index_b.insert(i, format!("{}", i % 3));
-        }
-        if i % 5 == 0 {
-            index_c.insert(i, format!("{}", i % 25));
-        }
-        if i % 5 == 2 {
-            index_b.insert(i, format!("{}", i % 13));
-        }
-        if i % 7 == 0 {
-            index_d.insert(i, format!("{}", i % 5));
-        }
+fn search_index(index: &impl SearchIndex<usize>, queries: &[Query]) {
+    for q in queries {
+        index.search(q).expect("no error");
     }
-    let mut engine = SearchEngine::<usize>::new();
-    engine.add_index("a", index_a);
-    engine.add_index("b", index_b);
-    engine.add_index("c", index_c);
-    engine.add_index("d", index_d);
 }
 
-fn criterion_benchmark(c: &mut Criterion) {
-    let mut create_group = c.benchmark_group("create engine");
-    create_group
-        .sample_size(150)
-        .measurement_time(Duration::from_secs(15));
-    create_group
+fn search_exact_bench(c: &mut Criterion) {
+    let mut group = c.benchmark_group("search-exact");
+    group.measurement_time(Duration::from_secs(10));
+    group
         .plot_config(PlotConfiguration::default().summary_scale(criterion::AxisScale::Logarithmic));
-    for size in [1, 10, 100, 1000, 10000, 100000].iter() {
-        create_group.bench_with_input(BenchmarkId::from_parameter(size), size, |b, &size| {
-            b.iter(|| create_engine(black_box(size)));
-        });
+
+    let index_size = 1000000;
+    let mut input = Vec::with_capacity(index_size);
+    for i in 0..index_size {
+        input.push(
+            format!("{:06}", i % (index_size / 100))
+                .chars()
+                .rev()
+                .collect(),
+        );
     }
-    create_group.finish();
+    let index_hashmap = create_index_hashmap(&input);
+    let index_prefix_tree = create_index_prefix_tree(&input);
+    let index_btree_range = create_index_btree_range(&input);
+
+    for &size in [100, 1000, 10000].iter() {
+        let mut input = Vec::with_capacity(size);
+        for i in 0..size {
+            input.push(Query::Exact(
+                "".into(),
+                format!("{:06}", i % (size / 50)).chars().rev().collect(),
+            ));
+        }
+
+        group.throughput(Throughput::Elements(size as u64));
+        group.bench_with_input(
+            BenchmarkId::new("SearchIndexHashMap", size),
+            &input,
+            |b, input| {
+                b.iter(|| search_index(&index_hashmap, black_box(input)));
+            },
+        );
+        group.bench_with_input(
+            BenchmarkId::new("SearchIndexPrefixTree", size),
+            &input,
+            |b, input| {
+                b.iter(|| search_index(&index_prefix_tree, black_box(input)));
+            },
+        );
+        group.bench_with_input(
+            BenchmarkId::new("SearchIndexBTreeRange", size),
+            &input,
+            |b, input| {
+                b.iter(|| search_index(&index_btree_range, black_box(input)));
+            },
+        );
+    }
+    group.finish();
 }
 
-criterion_group!(benches, criterion_benchmark);
+criterion_group!(benches, search_exact_bench);
 criterion_main!(benches);
