@@ -47,7 +47,6 @@ impl<P: Eq + Hash + Clone> SearchEngine<P> {
     /// use attribute_search_engine::{SearchEngine, SearchIndexHashMap};
     ///
     /// let mut index = SearchIndexHashMap::<_, String>::new();
-    ///
     /// // Fill index here...
     ///
     /// let mut engine = SearchEngine::<usize>::new();
@@ -114,7 +113,70 @@ impl<P: Eq + Hash + Clone> SearchEngine<P> {
 
     /// Build a [Query] from a string slice.
     ///
-    /// TODO Format description, Limitations, Example, Freetext
+    /// This function can return an error if an unknown index is referenced.
+    /// On success this function returns a fully owned Query and a vector of string
+    /// slices into the input query, that contains all parts of the query, that are not
+    /// following the query syntax. They are called "Freetext". They will never contain
+    /// whitespace.
+    ///
+    /// # Basic Syntax
+    /// The following text is an example for a query:
+    /// ```text
+    /// +attr1:foo,bar +attr2:=baz +attr3:<42,>84 -attr4:69-121
+    /// ```
+    /// As a boolean expression it will mean something like this:
+    /// ```text
+    ///    (attr1==foo || attr1==bar)
+    /// && (attr2==baz)
+    /// && (attr3 <= 42 || attr3 >= 84)
+    /// && !(69 <= attr4 <= 121)
+    /// ```
+    ///
+    /// # In-depth Syntax description
+    /// A string query consists of multiple whitespace seperated attribute selectors.
+    /// Each of them starts with a `+` or `-` sign, indicating if the rows matching this
+    /// selector should be included or excluded from the result. This is followed by the
+    /// name of the attribute/index and a single `:` char. Next comes a list of comma seperated
+    /// values that describe the basic queries that are used to select rows. There are
+    /// special operator symbols that can change the meaning of a value if the index
+    /// supports the matching query type. For example, if the Index supports Maximum queries,
+    /// the following value will return a Maximum query instead of an Exact query: `<123`.
+    ///
+    /// The following operator symbols are currently used **if the index supports it**:
+    /// - `>val` - forces a Minimum query
+    /// - `<val` - forces a Maximum query
+    /// - `=val` - forces a Exact query
+    /// - `minval-maxval` - forces a InRange query
+    ///
+    /// If no operator symbol is found, a Prefix query will be used if it is supported by the index.
+    /// Otherwise a Exact query is used, even if the index may not support it (all official indices
+    /// currently implement them).
+    ///
+    /// All non-whitespace substrings in the query, that are not valid attribute selectors are
+    /// considered "Freetext". All of these are returned on success and can be used or
+    /// ignored by the caller. For example they can be used to filter the results further.
+    ///
+    /// # Limits
+    /// - OutRange queries don't have an operator symbol and are currently not supported.
+    ///   But it is possible to build a functionally equivalent query if the index supports
+    ///   Minimum and Maximum queries: `+attr:<10,>20`
+    /// - InRange does not support negative values because only one `-` char is allowed.
+    /// - There is no way to force a Prefix query. It will be automatically used if no
+    ///   operator symbol is found and the index supports them.
+    ///
+    /// # Example
+    /// ```rust
+    /// use attribute_search_engine::{SearchEngine, SearchIndexHashMap, Query};
+    ///
+    /// let mut index = SearchIndexHashMap::<_, String>::new();
+    /// // Fill index here...
+    ///
+    /// let mut engine = SearchEngine::<usize>::new();
+    /// engine.add_index("attribute", index);
+    /// let (q, freetext) = engine.query_from_str("+attribute:foo bar").expect("no error");
+    /// assert_eq!(q, Query::And(vec![Query::Exact("attribute".into(), "foo".into())]));
+    /// assert_eq!(freetext, vec!["bar"]);
+    /// ```
     pub fn query_from_str<'a>(&self, query_str: &'a str) -> Result<(Query, Vec<&'a str>)> {
         let mut include = vec![];
         let mut exclude = vec![];
@@ -323,5 +385,34 @@ mod tests {
             ])
         );
         assert_eq!(freetext, vec!["abc", "def"]);
+    }
+
+    #[test]
+    fn query_parser_alternatives() {
+        let engine = create_parser_engine();
+        let (q, freetext) = engine
+            .query_from_str(
+                "start +pet:Cat,Dog +name:Alex,=Hans middle +zipcode:=10000,<500,50000-60000 end",
+            )
+            .unwrap();
+        assert_eq!(
+            q,
+            Query::And(vec![
+                Query::Or(vec![
+                    Query::Exact("pet".into(), "Cat".into()),
+                    Query::Exact("pet".into(), "Dog".into()),
+                ]),
+                Query::Or(vec![
+                    Query::Prefix("name".into(), "Alex".into()),
+                    Query::Exact("name".into(), "Hans".into()),
+                ]),
+                Query::Or(vec![
+                    Query::Exact("zipcode".into(), "10000".into()),
+                    Query::Maximum("zipcode".into(), "500".into()),
+                    Query::InRange("zipcode".into(), "50000".into(), "60000".into()),
+                ]),
+            ])
+        );
+        assert_eq!(freetext, vec!["start", "middle", "end"]);
     }
 }

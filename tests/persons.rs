@@ -1,8 +1,6 @@
 use std::collections::HashSet;
 
-use attribute_search_engine::{
-    Query, SearchEngine, SearchIndexBTreeRange, SearchIndexHashMap, SearchIndexPrefixTree,
-};
+use attribute_search_engine::*;
 
 #[test]
 fn query_btree_range_index() {

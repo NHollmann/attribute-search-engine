@@ -9,17 +9,7 @@ It also includes a query string parser for simple queries.
 
 **Warning: This project is not stable yet and the public interface may change in the future. Especially the query syntax might change.**
 
-- Rows
-  - Attributes
-    - ExactMatch  (HashMap)
-    - PrefixMatch (PrefixTree/Trie) (Strings only)
-    - RangeMatch  (BTreeMap)
-- Queries
-  - Are in CNF (Conjunctive Normal Form)
-    Example: `+name:Hans,Peter +age:25-35 -lastname=Doe`
-    Means:   `(name=Hans || name==Peter) && (age >= 25 && age <= 35) && !(lastname=Doe)`
-
-# Overview
+## Overview
 ```rust
 use attribute_search_engine::*;
 use std::collections::HashSet;
@@ -63,3 +53,50 @@ assert_eq!(engine.search(&q), Ok(HashSet::from_iter(vec![0, 1])));
 let q = engine.query_from_str("+name:Alice +address:Germany/ -age:25").unwrap();
 assert_eq!(engine.search(&q), Ok(HashSet::from_iter(vec![0])));
 ```
+
+## Search Indices
+A SearchIndex saves the mapping from attribute values to primary IDs for a single attribute.
+These indices can then be searched using queries. If only a single attribute type is needed,
+a SearchIndex by itself may be enough. But normally they are added to a SearchEngine that
+can handle multiple indices and complex queries involving `Or`, `And` and `Exclude` queries. 
+
+This library provides the following types of search indices:
+- SearchIndexHashMap, backed by a HashMap for quick exact queries.
+- SearchIndexPrefixTree, backed by a prefix tree to find rows just by the prefix of an attribute.
+- SearchIndexBTreeRange, backed by a BTreeMap to find rows with an attribute by providing a range.
+
+The SearchEngine can also work with custom search indices as long as they implement the
+`SearchIndex` trait.
+
+## Queries
+
+Queries are used to find rows in a SearchIndex or SearchEngine. Query is an enum type that defines
+different search behaviours. Not all Query variants are supported by all index types. Queries can
+be crafted manually without restrictions or with some limits from a string using a SearchEngine.
+
+### Query String Syntax
+
+The SearchEngine provides the function `query_from_str` that can be used to create queries
+from strings. They are much more limited than manually crafted queries but should be 
+powerful enough for most use cases.
+
+The following text is an example for a query:
+```text
++attr1:foo,bar +attr2:=baz +attr3:<42,>84 -attr4:69-121
+```
+As a boolean expression it will mean something like this:
+```text
+   (attr1==foo || attr1==bar)
+&& (attr2==baz)
+&& (attr3 <= 42 || attr3 >= 84)
+&& !(69 <= attr4 <= 121)
+```
+
+Are more in-depth description of the query syntax can be found in the documentation of the
+`SearchEngine::query_from_str` function.
+
+## Examples
+
+The following tests can be used as basic examples of this library:
+- `./tests/network.rs`
+- `./tests/persons.rs`
